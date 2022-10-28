@@ -19,6 +19,7 @@
 struct options_server
 {
     in_port_t port_in;
+    int fd_out;
     char directory[100];
     int server_socket;
     int client_socket[5];
