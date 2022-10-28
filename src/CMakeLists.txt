@@ -11,8 +11,8 @@ ENDIF ()
 
 # Make an executable
 add_executable(SERVER ${COMMON_SOURCE_LIST}  ${SERVER_SOURCE_LIST} ${SERVER_MAIN_SOURCE} ${HEADER_LIST})
-add_executable(CLIENTA ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST})
-add_executable(CLIENTB ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENT_MAIN_SOURCE} ${HEADER_LIST})
+add_executable(CLIENTA ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENTA_MAIN_SOURCE} ${HEADER_LIST})
+add_executable(CLIENTB ${COMMON_SOURCE_LIST}  ${CLIENT_SOURCE_LIST} ${CLIENTB_MAIN_SOURCE} ${HEADER_LIST})
 
 # We need this directory, and users of our library will need it too
 target_include_directories(SERVER PRIVATE ../include)
@@ -78,5 +78,6 @@ add_custom_target(
         ${SERVER_SOURCE_LIST}
         ${CLIENT_SOURCE_LIST}
         ${SERVER_MAIN_SOURCE}
-        ${CLIENT_MAIN_SOURCE}
+        ${CLIENTA_MAIN_SOURCE}
+        ${CLIENTB_MAIN_SOURCE}
 )

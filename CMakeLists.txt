@@ -9,13 +9,12 @@ project(PROJECT
         LANGUAGES C)
 
 set(HEADER_LIST
-#        "${PROJECT_SOURCE_DIR}/include/common.h"
+        "${PROJECT_SOURCE_DIR}/include/common.h"
         "${PROJECT_SOURCE_DIR}/include/server.h"
-#        "${PROJECT_SOURCE_DIR}/include/error.h"
-#        "${PROJECT_SOURCE_DIR}/include/conversion.h"
-#        "${PROJECT_SOURCE_DIR}/include/copy.h"
+        "${PROJECT_SOURCE_DIR}/include/error.h"
+        "${PROJECT_SOURCE_DIR}/include/conversion.h"
+        "${PROJECT_SOURCE_DIR}/include/copy.h"
 #        "${PROJECT_SOURCE_DIR}/include/download.h"
-#        "${PROJECT_SOURCE_DIR}/include/client.h"
 #        "${PROJECT_SOURCE_DIR}/include/send.h"
         "${PROJECT_SOURCE_DIR}/include/clientA.h"
         "${PROJECT_SOURCE_DIR}/include/clientB.h"
@@ -23,10 +22,10 @@ set(HEADER_LIST
         )
 
 set(COMMON_SOURCE_LIST
-#        "${PROJECT_SOURCE_DIR}/src/common.c"
-#        "${PROJECT_SOURCE_DIR}/src/error.c"
-#        "${PROJECT_SOURCE_DIR}/src/conversion.c"
-#        "${PROJECT_SOURCE_DIR}/src/copy.c"
+        "${PROJECT_SOURCE_DIR}/src/common.c"
+        "${PROJECT_SOURCE_DIR}/src/error.c"
+        "${PROJECT_SOURCE_DIR}/src/conversion.c"
+        "${PROJECT_SOURCE_DIR}/src/copy.c"
         )
 
 set(SERVER_SOURCE_LIST
@@ -41,8 +40,10 @@ set(SERVER_MAIN_SOURCE
         "${PROJECT_SOURCE_DIR}/src/server.c"
         )
 
-set(CLIENT_MAIN_SOURCE
+set(CLIENTA_MAIN_SOURCE
         "${PROJECT_SOURCE_DIR}/src/clientA.c"
+        )
+set(CLIENTB_MAIN_SOURCE
         "${PROJECT_SOURCE_DIR}/src/clientB.c"
         )
 
