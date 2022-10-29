@@ -1,88 +1,172 @@
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <pthread.h>
+#include <unistd.h>
+#include "error.h"
+#include "conversion.h"
+#include "clientA.h"
+#include "common.h"
+#include "copy.h"
 
-#define BUF_SIZE 100
-#define NAME_SIZE 20
 
-void *send_msg(void * arg);
-void *recv_msg(void * arg);
-void error_handling(char *msg);
-
-char name[NAME_SIZE] = "[DEFAULT]";
-char msg[BUF_SIZE];
 
 int main(int argc, char *argv[])
 {
-    int sock;
-    struct sockaddr_in serv_addr;
-    pthread_t snd_thread, rcv_thread;
-    void * thread_return;
-    if(argc!=4) {
-        printf("Usage : %s <IP> <port> <name>\n", argv[0]);
-        exit(1);
-    }
-
-    sprintf(name, "[%s]", argv[3]);
-    sock=socket(PF_INET, SOCK_STREAM, 0);
-
-    memset(&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family=AF_INET;
-    serv_addr.sin_addr.s_addr=inet_addr(argv[1]);
-    serv_addr.sin_port=htons(atoi(argv[2]));
-
-    if(connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr))==-1)
-        error_handling("connect() error");
-
-    pthread_create(&snd_thread, NULL, send_msg, (void*)&sock);
-    pthread_create(&rcv_thread, NULL, recv_msg, (void*)&sock);
-    pthread_join(snd_thread, &thread_return);
-    pthread_join(rcv_thread, &thread_return);
-    close(sock);
-    return 0;
+    struct options opts;
+    options_init(&opts);
+    parse_arguments(argc, argv, &opts);
+    options_process(&opts);
+    copy(opts.fd_in, opts.server_socket, 1024);
+    cleanup(&opts);
+    return EXIT_SUCCESS;
 }
 
-void * send_msg(void * arg)
+
+static void options_init(struct options *opts)
 {
-    int sock = *((int*)arg);
-    char name_msg[NAME_SIZE+BUF_SIZE];
-    while(1)
+    memset(opts, 0, sizeof(struct options));
+    opts->fd_in    = STDIN_FILENO;
+    opts->fd_out   = STDOUT_FILENO;
+    opts->port_out = DEFAULT_PORT;
+}
+
+
+static void parse_arguments(int argc, char *argv[], struct options *opts)
+{
+    int c;
+
+    while((c = getopt(argc, argv, ":s:p:")) != -1)   // NOLINT(concurrency-mt-unsafe)
     {
-        fgets(msg, BUF_SIZE, stdin);
-        if(!strcmp(msg, "q\n")||!strcmp(msg, "Q\n"))
+        switch(c)
         {
-            close(sock);
-            exit(0);
+            case 's':
+            {
+                opts->ip_out = optarg;
+                break;
+            }
+            case 'p':
+            {
+                opts->port_out = parse_port(optarg,
+                                            10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+                break;
+            }
+            case ':':
+            {
+                fatal_message(__FILE__, __func__, __LINE__, "\"Option requires an operand\"", 5); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+                break;
+            }
+            case '?':
+            {
+                fatal_message(__FILE__, __func__, __LINE__, "Unknown",
+                              6); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+            }
+            default:
+            {
+                assert("should not get here");
+            };
         }
-        sprintf(name_msg, "%s %s", name, msg);
-        write(sock, name_msg, strlen(name_msg));
     }
-    return NULL;
-}
-void * recv_msg(void * arg)
-{
-    int sock = *((int*)arg);
-    char name_msg[NAME_SIZE+BUF_SIZE];
-    int str_len;
-    while(1)
-    {
-        str_len = read(sock, name_msg, NAME_SIZE+BUF_SIZE-1);
-        if(str_len ==-1)
-            return (void*)-1;
-        name_msg[str_len] =0;
-        fputs(name_msg, stdout);
+
+    if(optind < argc) {
+        int i = 0;
+        if (strcmp(argv[optind + i], "*.txt") == 0) {
+            get_file_list(opts);
+        }
+        else {
+            while (argv[optind + i] != NULL){
+                opts->file_arr[i] = malloc(sizeof(char) * 20);
+                strcpy(opts->file_arr[i],  argv[optind + i]);
+                i++;
+            }
+        }
+
+        opts->file_count = i;
     }
-    return NULL;
 }
 
-void error_handling(char *msg)
+
+static void options_process(struct options *opts) {
+    ssize_t server_connection_test_fd;
+    char message[28];
+    message[27] = '\0';
+    if(opts->file_name)
+    {
+        opts->fd_in = open(opts->file_name, O_RDONLY);
+
+        if(opts->fd_in == -1)
+        {
+            fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        }
+    }
+
+
+    if(opts->ip_out)
+    {
+        int result;
+        struct sockaddr_in server_addr;
+
+        opts->server_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+        if(opts->server_socket == -1)
+        {
+            fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        }
+
+        server_addr.sin_family = AF_INET;
+        server_addr.sin_port = htons(opts->port_out);
+        server_addr.sin_addr.s_addr = inet_addr(opts->ip_out);
+
+        if(server_addr.sin_addr.s_addr ==  (in_addr_t)-1)
+        {
+            fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        }
+
+        result = connect(opts->server_socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr_in));
+
+        if(result == -1)
+        {
+            fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+        }
+        server_connection_test_fd = read(opts->server_socket, message, sizeof(message));
+        if(server_connection_test_fd == -1) {
+            printf("You are not connected to server\n");
+        }
+        printf("SERVER: %s \n", message);
+    }
+}
+
+
+static void cleanup(const struct options *opts)
 {
-    fputs(msg,stderr);
-    fputc('\n',stderr);
-    exit(1);
+    if(opts->ip_out)
+    {
+        close(opts->fd_out);
+    }
+    for (int i = 0; i < opts->file_count; i++) {
+        free(opts->file_arr[i]);
+    }
+}
+
+
+void get_file_list(struct options *opts) {
+
+    DIR *directory_buffer;
+    struct dirent *files;
+    directory_buffer = opendir ("./");
+    int i = 0;
+    if (directory_buffer != NULL) {
+        while ((files = readdir(directory_buffer))!=NULL) {
+            unsigned long length = strlen(files->d_name);
+            if (strncmp(files->d_name + length - 4, ".txt", 4) == 0) {
+                opts->file_arr[i] = files->d_name;
+                i++;
+            }
+        }
+        (void) closedir (directory_buffer);
+    }
 }

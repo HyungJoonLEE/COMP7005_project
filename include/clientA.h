@@ -1,5 +1,5 @@
-#ifndef COMP_7005_PROJECT_CLIENTA_H
-#define COMP_7005_PROJECT_CLIENTA_H
+#ifndef ASSIGNMENT1_CLIENT_H
+#define ASSIGNMENT1_CLIENT_H
 
 #include "common.h"
 #include <arpa/inet.h>
@@ -77,4 +77,4 @@ static void cleanup(const struct options *opts);
 void get_file_list(struct options *opts);
 
 
-#endif //COMP_7005_PROJECT_CLIENTA_H
+#endif //ASSIGNMENT1_CLIENT_H
