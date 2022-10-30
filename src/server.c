@@ -1,35 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/file.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include "conversion.h"
-#include "copy.h"
-#include "error.h"
 #include "server.h"
+#include "error.h"
 #include "common.h"
-#include <sys/time.h>
-#include <net/if.h>
 
 
-#define BUF_SIZE 1024
-#define BACKLOG 5
+const char *INPUT_EXIT = "exit"; // client input cancel connection
+const char *CONNECTION_SUCCESS = "Connected to chat_server\n"; // when client connected server send this
 
-int main(int argc, char *argv[])
-{
-    struct options_server opts;
+int main(int argc, char *argv[]) {
+    struct options opts;
+    struct sockaddr_in client_address;
+    int client_socket;
+    int max_socket_num; // IMPORTANT Don't forget to set +1
+    char buffer[1024] = {0};
+    int client_address_size = sizeof(struct sockaddr_in);
+    ssize_t received_data;
+    fd_set read_fds; // fd_set chasing reading status
 
     options_init_server(&opts);
     parse_arguments_server(argc, argv, &opts);
     options_process_server(&opts);
-    cleanup_server(&opts);
+
+    opts.client_count = 0;
+    while (1) {
+        FD_ZERO(&read_fds);
+        FD_SET(opts.server_socket, &read_fds);
+        for (int i = 0; i < opts.client_count; i++) {
+            FD_SET(opts.client_socket[i], &read_fds);
+        }
+        max_socket_num = get_max_socket_number(&opts) + 1;
+        puts("wait for client");
+        if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
+            perror("select() error");
+            exit(1);
+        }
+
+        if (FD_ISSET(opts.server_socket, &read_fds)) {
+            client_socket = accept(opts.server_socket, (struct sockaddr *)&client_address, &client_address_size);
+            if (client_socket == -1) {
+                perror("accept() error");
+                exit(1);
+            }
+
+            add_new_client(&opts, client_socket, &client_address);
+            write(client_socket, CONNECTION_SUCCESS, strlen(CONNECTION_SUCCESS));
+            printf("Successfully added client_fd to client_socket[%d]\n", opts.client_count - 1);
+        }
+
+        // Send data to all client
+        for (int i = 0; i < opts.client_count; i++) {
+            if (FD_ISSET(opts.client_socket[i], &read_fds)) {
+                received_data = read(opts.client_socket[i], buffer, sizeof(buffer));
+                if (received_data <= 0) {
+                    remove_client(&opts, i);
+                    continue;
+                }
+                buffer[received_data] = '\0';
+                // when user type "exit"
+                if (strstr(buffer, INPUT_EXIT) != NULL) {
+                    remove_client(&opts, i);
+                    continue;
+                }
+
+                // SEND MESSAGE TO ALL CLIENT
+                for (int j = 0; j < opts.client_count; j++) {
+                    write(opts.client_socket[j], buffer, sizeof(buffer));
+                }
+                printf("%s\n", buffer);
+            }
+        }
+    }
     return EXIT_SUCCESS;
 }
 
-
-static void options_init_server(struct options_server *opts) {
-    memset(opts, 0, sizeof(struct options_server));
+static void options_init_server(struct options *opts) {
+    memset(opts, 0, sizeof(struct options));
     opts->port_in = DEFAULT_PORT;
-    opts->fd_out = STDOUT_FILENO;
 }
 
 
-static void parse_arguments_server(int argc, char *argv[], struct options_server *opts)
+static void parse_arguments_server(int argc, char *argv[], struct options *opts)
 {
     int c;
 
@@ -60,20 +120,10 @@ static void parse_arguments_server(int argc, char *argv[], struct options_server
 }
 
 
-static void options_process_server(struct options_server *opts)
-{
-    char message[27] = "You are connected to server";
-    message[27] = '\0';
-
-
+static void options_process_server(struct options *opts) {
     struct sockaddr_in server_address;
-    struct sockaddr_in client_address;
-    socklen_t client_address_size;
     int option = TRUE;
-    fd_set readfds;
-    int max_sd, sd, activity, new_socket, valread;
-    char buffer[1024];
-    ssize_t received_bytes = 0;
+
 
     for (int i = 0; i < BACKLOG; i++) {
         opts->client_socket[i] = 0;
@@ -81,8 +131,8 @@ static void options_process_server(struct options_server *opts)
 
 
     opts->server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if(opts->server_socket == -1) {
-        printf( "socket() ERROR\n");
+    if (opts->server_socket == -1) {
+        printf("socket() ERROR\n");
         exit(1);
     }
 
@@ -90,15 +140,15 @@ static void options_process_server(struct options_server *opts)
     server_address.sin_port = htons(opts->port_in);
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if(server_address.sin_addr.s_addr ==  (in_addr_t) -1) {
-        fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
+    if (server_address.sin_addr.s_addr == (in_addr_t) -1) {
+        fatal_errno(__FILE__, __func__, __LINE__, errno, 2);
     }
 
     option = 1;
     setsockopt(opts->server_socket, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
 
 
-    if (bind(opts->server_socket, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in)) == -1) {
+    if (bind(opts->server_socket, (struct sockaddr *) &server_address, sizeof(struct sockaddr_in)) == -1) {
         printf("bind() ERROR\n");
         exit(1);
     }
@@ -108,66 +158,39 @@ static void options_process_server(struct options_server *opts)
         printf("listen() ERROR\n");
         exit(1);
     }
-
-    client_address_size = sizeof(client_address);
-
-    while (TRUE) {
-        FD_ZERO((&readfds));
-        FD_SET(opts->server_socket, &readfds);
-        max_sd = opts->server_socket;
-
-        for (int i = 0; i < BACKLOG; i++) {
-            sd = opts->client_socket[i];
-            if (sd > 0) FD_SET(sd, &readfds);
-            if (sd > max_sd) max_sd = sd;
-        }
-        activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-        if (activity < 0) printf("select error\n");
-
-        if (FD_ISSET(opts->server_socket, &readfds)) {
-            if ((new_socket = accept(opts->server_socket, (struct sockaddr *) &client_address,
-                                     &client_address_size)) < 0) {
-                perror("accept: ");
-                exit(EXIT_FAILURE);
-            }
-
-            printf("====== [New Client Connect] ======\n"
-                   "Socket fd : %d\n"
-                   "ip : %s\n"
-                   "port : %d\n", new_socket, inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
-
-            if (send(new_socket, message, strlen(message), 0) != strlen(message)) perror("send : ");
-
-            for (int i = 0; i < 5; i++) {
-                if (opts->client_socket[i] == 0) {
-                    opts->client_socket[i] = new_socket;
-                    opts->active_sd = new_socket;
-                    printf("Successfully added in client socket array: [%d]\n", i);
-                    break;
-                }
-            }
-
-            copy(opts->client_socket[0], opts->fd_out, 1024);
-
-        }
-
-        for (int i = 0; i < 5; i++) {
-            sd = opts->client_socket[i];
-            if (FD_ISSET(sd, &readfds)) {
-                if ((valread = read(sd, buffer, 1024)) == 0) {
-                    getpeername(sd, (struct sockaddr *) &client_address, &client_address_size);
-                    printf("DISCONNECTED [ ip : %s ]\n", inet_ntoa(client_address.sin_addr));
-                    close(sd);
-                    opts->client_socket[i] = 0;
-                } else {
-                    buffer[valread] = '\0';
-                }
-            }
-        }
-    }
 }
 
 
-static void cleanup_server(const struct options_server *opts) {
-    close(opts->server_socket);
+void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *new_client_address) {
+    char buffer[20];
+
+    inet_ntop(AF_INET, &new_client_address->sin_addr, buffer, sizeof(buffer));
+    printf("New client: [ %s ]\n", buffer);
+
+    opts->client_socket[opts->client_count] = client_socket;
+    opts->client_count++;
+}
+
+
+void remove_client(struct options *opts, int client_socket) {
+    close(opts->client_socket[client_socket]);
+
+    if (client_socket != opts->client_count - 1)
+        opts->client_socket[client_socket] = opts->client_socket[opts->client_count - 1];
+
+    opts->client_count--;
+    printf("Current client count = %d\n", opts->client_count);
+}
+
+// Finding maximum socket number
+int get_max_socket_number(struct options *opts) {
+    // Minimum socket number start with server socket(opts->server_socket)
+    int max = opts->server_socket;
+    int i;
+
+    for (i = 0; i < opts->client_count; i++)
+        if (opts->client_socket[i] > max)
+            max = opts->client_socket[i];
+
+    return max;
 }

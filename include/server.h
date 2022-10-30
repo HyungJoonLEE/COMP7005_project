@@ -15,17 +15,18 @@
 #include <ctype.h>
 
 #define BACKLOG 5
+#define DEFAULT_PORT 4000
 
-struct options_server
+
+struct options
 {
     in_port_t port_in;
-    int fd_out;
-    char directory[100];
     int server_socket;
-    int client_socket[5];
-    unsigned int client_count;
-    int active_sd;
+    int client_socket[2];
+    int client_count;
+    char file_name[20];
 };
+
 
 
 /**
@@ -34,7 +35,7 @@ struct options_server
  *
  * @param opts client struct settings
  */
-static void options_init_server(struct options_server *opts);
+static void options_init_server(struct options *opts);
 
 
 /**
@@ -46,7 +47,7 @@ static void options_init_server(struct options_server *opts);
  * @param argv server's input
  * @param opts server option struct settings
  */
-static void parse_arguments_server(int argc, char *argv[], struct options_server *opts);
+static void parse_arguments_server(int argc, char *argv[], struct options *opts);
 
 
 /**
@@ -54,7 +55,7 @@ static void parse_arguments_server(int argc, char *argv[], struct options_server
  *
  * @param opts client option struct settings
  */
-static void options_process_server(struct options_server *opts);
+static void options_process_server(struct options *opts);
 
 
 /**
@@ -62,5 +63,11 @@ static void options_process_server(struct options_server *opts);
  *
  * @param opts
  */
-static void cleanup_server(const struct options_server *opts);
+static void cleanup_server(const struct options *opts);
+
+
+void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);
+int get_max_socket_number(struct options *opts); // 최대 소켓번호 찾기
+void remove_client(struct options *opts, int client_socket); // 채팅 탈퇴 처리 함수
+void error_handling(char *message);
 #endif //COMP_7005_PROJECT_SERVER_H
