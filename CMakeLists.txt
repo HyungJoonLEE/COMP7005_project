@@ -16,8 +16,7 @@ set(HEADER_LIST
         "${PROJECT_SOURCE_DIR}/include/copy.h"
 #        "${PROJECT_SOURCE_DIR}/include/download.h"
 #        "${PROJECT_SOURCE_DIR}/include/send.h"
-        "${PROJECT_SOURCE_DIR}/include/clientA.h"
-        "${PROJECT_SOURCE_DIR}/include/clientB.h"
+        "${PROJECT_SOURCE_DIR}/include/client.h"
 
         )
 

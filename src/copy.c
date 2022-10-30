@@ -20,7 +20,7 @@ void copy(int from_fd, int to_fd, size_t count)
     {
         ssize_t wbytes;
 
-        wbytes = write(to_fd, buffer, rbytes);
+        wbytes = write(to_fd, buffer, sizeof(wbytes));
 
         if(wbytes == -1)
         {

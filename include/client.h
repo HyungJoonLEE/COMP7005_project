@@ -31,6 +31,7 @@ struct options
 };
 
 
+
 /**
  * Initialize default option for client
  * STDIN, STDOUT and port number saved
@@ -58,7 +59,7 @@ static void parse_arguments(int argc, char *argv[], struct options *opts);
  *
  * @param opts client option struct settings
  */
-static void options_process(struct options *opts);
+static int options_process(struct options *opts);
 
 
 /**

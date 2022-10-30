@@ -63,7 +63,7 @@ static void options_process_server(struct options *opts);
  *
  * @param opts
  */
-static void cleanup_server(const struct options *opts);
+static void cleanup(const struct options *opts);
 
 
 void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);

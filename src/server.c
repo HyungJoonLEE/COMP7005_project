@@ -15,7 +15,7 @@
 
 
 const char *INPUT_EXIT = "exit"; // client input cancel connection
-const char *CONNECTION_SUCCESS = "Connected to chat_server\n"; // when client connected server send this
+const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
 
 int main(int argc, char *argv[]) {
     struct options opts;
@@ -39,16 +39,16 @@ int main(int argc, char *argv[]) {
             FD_SET(opts.client_socket[i], &read_fds);
         }
         max_socket_num = get_max_socket_number(&opts) + 1;
-        puts("wait for client");
+        printf("wait for client\n");
         if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
-            perror("select() error");
+            printf("select() error");
             exit(1);
         }
 
         if (FD_ISSET(opts.server_socket, &read_fds)) {
             client_socket = accept(opts.server_socket, (struct sockaddr *)&client_address, &client_address_size);
             if (client_socket == -1) {
-                perror("accept() error");
+                printf("accept() error");
                 exit(1);
             }
 
@@ -76,10 +76,11 @@ int main(int argc, char *argv[]) {
                 for (int j = 0; j < opts.client_count; j++) {
                     write(opts.client_socket[j], buffer, sizeof(buffer));
                 }
-                printf("%s\n", buffer);
+                printf("%s", buffer);
             }
         }
     }
+    cleanup(&opts);
     return EXIT_SUCCESS;
 }
 
@@ -193,4 +194,8 @@ int get_max_socket_number(struct options *opts) {
             max = opts->client_socket[i];
 
     return max;
+}
+
+static void cleanup(const struct options *opts) {
+    close(opts->server_socket);
 }

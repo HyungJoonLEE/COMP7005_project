@@ -1,31 +1,71 @@
-#include <arpa/inet.h>
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/time.h>
 #include <unistd.h>
-#include "error.h"
+#include <arpa/inet.h>
+#include "client.h"
 #include "conversion.h"
-#include "clientA.h"
-#include "common.h"
-#include "copy.h"
+#include "error.h"
+
+#define NAME_LEN 20
+
+const char *INPUT_EXIT = "exit";
+
+int main(int argc, char *argv[]) {
+    int max_socket_num; // IMPORTANT Don't forget to set +1
+    char buffer[1024] = {0};
+    fd_set read_fds;
 
 
-
-int main(int argc, char *argv[])
-{
     struct options opts;
     options_init(&opts);
     parse_arguments(argc, argv, &opts);
-    options_process(&opts);
-    copy(opts.fd_in, opts.server_socket, 1024);
+    opts.server_socket = options_process(&opts);
+    if (opts.server_socket == -1) {
+        printf("Connect() fail");
+    }
+
+    max_socket_num = opts.server_socket + 1;
+
+    FD_ZERO(&read_fds);
+    while (1) {
+        FD_SET(0, &read_fds);
+        FD_SET(opts.server_socket, &read_fds);
+        if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
+            printf("select fail");
+            exit(1);
+        }
+
+        if (FD_ISSET(opts.server_socket, &read_fds)) {
+            ssize_t received_data_size;
+
+            if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
+                buffer[received_data_size] = '\0';
+                printf("%s\n",buffer);
+            }
+        }
+
+        if (FD_ISSET(0, &read_fds)) {
+            if (fgets(buffer, sizeof(buffer), stdin)) {
+                if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
+                    printf("Nothing to write()\n");
+
+                if (strstr(buffer, INPUT_EXIT) != NULL) {
+                    printf("Exit from the server");
+                    close(opts.server_socket);
+                    exit(0);
+                }
+            }
+        }
+    }
     cleanup(&opts);
     return EXIT_SUCCESS;
 }
-
 
 static void options_init(struct options *opts)
 {
@@ -90,10 +130,10 @@ static void parse_arguments(int argc, char *argv[], struct options *opts)
 }
 
 
-static void options_process(struct options *opts) {
+static int options_process(struct options *opts) {
     ssize_t server_connection_test_fd;
-    char message[28];
-    message[27] = '\0';
+    int result;
+    char message[50] = {0};
     if(opts->file_name)
     {
         opts->fd_in = open(opts->file_name, O_RDONLY);
@@ -107,7 +147,6 @@ static void options_process(struct options *opts) {
 
     if(opts->ip_out)
     {
-        int result;
         struct sockaddr_in server_addr;
 
         opts->server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -136,20 +175,9 @@ static void options_process(struct options *opts) {
         if(server_connection_test_fd == -1) {
             printf("You are not connected to server\n");
         }
-        printf("SERVER: %s \n", message);
+        printf("[ SERVER ]: %s \n", message);
     }
-}
-
-
-static void cleanup(const struct options *opts)
-{
-    if(opts->ip_out)
-    {
-        close(opts->fd_out);
-    }
-    for (int i = 0; i < opts->file_count; i++) {
-        free(opts->file_arr[i]);
-    }
+    return opts->server_socket;
 }
 
 
@@ -170,3 +198,16 @@ void get_file_list(struct options *opts) {
         (void) closedir (directory_buffer);
     }
 }
+
+
+static void cleanup(const struct options *opts)
+{
+    if(opts->ip_out)
+    {
+        close(opts->fd_out);
+    }
+    for (int i = 0; i < opts->file_count; i++) {
+        free(opts->file_arr[i]);
+    }
+}
+
