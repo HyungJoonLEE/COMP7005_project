@@ -4,6 +4,7 @@
 #include <strings.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <unistd.h>

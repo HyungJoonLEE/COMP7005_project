@@ -4,6 +4,7 @@
 #include <strings.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sys/file.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -16,6 +17,8 @@
 
 const char *INPUT_EXIT = "exit"; // client input cancel connection
 const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
+static int data_send_rate;
+static int ack_receive_rate;
 
 int main(int argc, char *argv[]) {
     struct options opts;
