@@ -13,7 +13,6 @@
 #include "conversion.h"
 #include "error.h"
 
-#define NAME_LEN 20
 
 const char *INPUT_EXIT = "exit";
 

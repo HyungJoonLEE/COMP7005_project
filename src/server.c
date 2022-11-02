@@ -17,8 +17,6 @@
 
 const char *INPUT_EXIT = "exit"; // client input cancel connection
 const char *CONNECTION_SUCCESS = "Successfully connected to the server\n"; // when client connected server send this
-static int data_send_rate;
-static int ack_receive_rate;
 
 int main(int argc, char *argv[]) {
     struct options opts;
@@ -61,27 +59,27 @@ int main(int argc, char *argv[]) {
         }
 
         // Send data to all client
-        for (int i = 0; i < opts.client_count; i++) {
-            if (FD_ISSET(opts.client_socket[i], &read_fds)) {
-                received_data = read(opts.client_socket[i], buffer, sizeof(buffer));
-                if (received_data <= 0) {
-                    remove_client(&opts, i);
-                    continue;
-                }
-                buffer[received_data] = '\0';
-                // when user type "exit"
-                if (strstr(buffer, INPUT_EXIT) != NULL) {
-                    remove_client(&opts, i);
-                    continue;
-                }
-
-                // SEND MESSAGE TO ALL CLIENT
-                for (int j = 0; j < opts.client_count; j++) {
-                    write(opts.client_socket[j], buffer, sizeof(buffer));
-                }
-                printf("%s", buffer);
+        if (FD_ISSET(opts.client_socket[1], &read_fds)) {
+            int random_number = data_receive_rate_process();
+            received_data = read(opts.client_socket[1], buffer, sizeof(buffer));
+            buffer[received_data] = '\0';
+            if (received_data <= 0) {
+                remove_client(&opts, 1);
+                continue;
             }
+            // when user type "exit"
+            if (strstr(buffer, INPUT_EXIT) != NULL) {
+                remove_client(&opts, 1);
+                continue;
+            }
+
+            // SEND MESSAGE TO ALL CLIENT
+            for (int j = 0; j < opts.client_count; j++) {
+                write(opts.client_socket[j], buffer, sizeof(buffer));
+            }
+            printf("%s", buffer);
         }
+
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
@@ -90,6 +88,8 @@ int main(int argc, char *argv[]) {
 static void options_init_server(struct options *opts) {
     memset(opts, 0, sizeof(struct options));
     opts->port_in = DEFAULT_PORT;
+    opts->data_send_rate = DEFAULT_DATA_SEND_RATE;
+    opts->ack_receive_rate = DEFAULT_ACK_RECEIVE_RATE;
 }
 
 
@@ -97,13 +97,23 @@ static void parse_arguments_server(int argc, char *argv[], struct options *opts)
 {
     int c;
 
-    while((c = getopt(argc, argv, ":p:")) != -1)   // NOLINT(concurrency-mt-unsafe)
+    while((c = getopt(argc, argv, ":p:d:a:")) != -1)   // NOLINT(concurrency-mt-unsafe)
     {
         switch(c)
         {
             case 'p':
             {
                 opts->port_in = parse_port(optarg, 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+                break;
+            }
+            case 'd':
+            {
+                opts->data_send_rate = atoi(optarg); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+                break;
+            }
+            case 'a':
+            {
+                opts->ack_receive_rate = atoi(optarg); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
                 break;
             }
             case ':':
@@ -197,6 +207,14 @@ int get_max_socket_number(struct options *opts) {
             max = opts->client_socket[i];
 
     return max;
+}
+
+
+int data_receive_rate_process() {
+    srand(time(NULL));
+    int random = 0;
+    random = rand() % 100 + 1;
+    return random;
 }
 
 static void cleanup(const struct options *opts) {

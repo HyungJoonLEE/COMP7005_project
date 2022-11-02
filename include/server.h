@@ -16,6 +16,8 @@
 
 #define BACKLOG 5
 #define DEFAULT_PORT 4000
+#define DEFAULT_DATA_SEND_RATE 100
+#define DEFAULT_ACK_RECEIVE_RATE 100
 
 
 struct options
@@ -24,6 +26,8 @@ struct options
     int server_socket;
     int client_socket[2];
     int client_count;
+    int data_send_rate;
+    int ack_receive_rate;
     char file_name[20];
 };
 
@@ -67,7 +71,7 @@ static void cleanup(const struct options *opts);
 
 
 void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);
-int get_max_socket_number(struct options *opts); // 최대 소켓번호 찾기
-void remove_client(struct options *opts, int client_socket); // 채팅 탈퇴 처리 함수
-void error_handling(char *message);
+int get_max_socket_number(struct options *opts);
+void remove_client(struct options *opts, int client_socket);
+int data_receive_rate_process();
 #endif //COMP_7005_PROJECT_SERVER_H
