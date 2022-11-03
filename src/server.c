@@ -23,16 +23,21 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in client_address;
     int client_socket;
     int max_socket_num; // IMPORTANT Don't forget to set +1
-    char buffer[1024] = {0};
+    char buffer[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
     ssize_t received_data;
     fd_set read_fds; // fd_set chasing reading status
+    int received_data_count = 0;
+    int received_ack_count = 0;
+    int loss_data_count = 0;
+    int loss_ack_count = 0;
 
     options_init_server(&opts);
     parse_arguments_server(argc, argv, &opts);
     options_process_server(&opts);
+    printf("recv data = %d\n", *(&opts.data_send_rate));
 
-    opts.client_count = 0;
+
     while (1) {
         FD_ZERO(&read_fds);
         FD_SET(opts.server_socket, &read_fds);
@@ -58,28 +63,48 @@ int main(int argc, char *argv[]) {
             printf("Successfully added client_fd to client_socket[%d]\n", opts.client_count - 1);
         }
 
-        // Send data to all client
+        // Receive packet from client A
         if (FD_ISSET(opts.client_socket[1], &read_fds)) {
-            int random_number = data_receive_rate_process();
             received_data = read(opts.client_socket[1], buffer, sizeof(buffer));
-            buffer[received_data] = '\0';
             if (received_data <= 0) {
-                remove_client(&opts, 1);
+                remove_client(&opts, 0);
                 continue;
             }
+            buffer[received_data] = '\0';
             // when user type "exit"
             if (strstr(buffer, INPUT_EXIT) != NULL) {
-                remove_client(&opts, 1);
+                remove_client(&opts, 0);
                 continue;
             }
 
-            // SEND MESSAGE TO ALL CLIENT
-            for (int j = 0; j < opts.client_count; j++) {
-                write(opts.client_socket[j], buffer, sizeof(buffer));
+            // SEND MESSAGE TO CLIENT B
+            if(data_receive_rate_process(&opts) > 0) {
+                write(opts.client_socket[0], buffer, sizeof(buffer));
+                received_data_count++;
             }
+            else loss_data_count++;
             printf("%s", buffer);
         }
 
+        // Receive ACK from client B
+        if (FD_ISSET(opts.client_socket[0], &read_fds)) {
+            received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
+            if (received_data <= 0) {
+                remove_client(&opts, 0);
+                continue;
+            }
+            buffer[received_data] = '\0';
+            if (ack_receive_rate_process(&opts) > 0) {
+                write(opts.client_socket[1], buffer, sizeof(buffer));
+                received_ack_count++;
+            }
+            else loss_ack_count++;
+            memset(buffer, 0, 256);
+        }
+        printf("received_data_count = %d\n", received_data_count);
+        printf("loss_data_count = %d\n", loss_data_count);
+        printf("received_ack_count = %d\n", received_ack_count);
+        printf("loss_ack_count = %d\n", loss_ack_count);
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
@@ -139,7 +164,7 @@ static void options_process_server(struct options *opts) {
     int option = TRUE;
 
 
-    for (int i = 0; i < BACKLOG; i++) {
+    for (int i = 0; i < 2; i++) {
         opts->client_socket[i] = 0;
     }
 
@@ -210,12 +235,43 @@ int get_max_socket_number(struct options *opts) {
 }
 
 
-int data_receive_rate_process() {
-    srand(time(NULL));
-    int random = 0;
+bool data_receive_rate_process(struct options *opts) {
+    int random;
+
+    struct timeval  tv;
+    gettimeofday(&tv, NULL);
+    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+    srand(time_in_mill);
     random = rand() % 100 + 1;
-    return random;
+    if (random <= opts->data_send_rate) {
+        printf("[SENT] random(%d) <= data_send_rate(%d)\n", random, opts->data_send_rate);
+        return true;
+    }
+    else {
+        printf("[FAILED] random(%d) > data_send_rate(%d)\n", random, opts->data_send_rate);
+        return false;
+    }
 }
+
+
+bool ack_receive_rate_process(struct options *opts) {
+    int random;
+
+    struct timeval  tv;
+    gettimeofday(&tv, NULL);
+    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+    srand(time_in_mill);
+    random = rand() % 100 + 1;
+    if (random <= opts->ack_receive_rate) {
+        printf("[SENT] random(%d) <= data_send_rate(%d)\n", random, opts->ack_receive_rate);
+        return true;
+    }
+    else {
+        printf("[FAILED] random(%d) > data_send_rate(%d)\n", random, opts->ack_receive_rate);
+        return false;
+    }
+}
+
 
 static void cleanup(const struct options *opts) {
     close(opts->server_socket);

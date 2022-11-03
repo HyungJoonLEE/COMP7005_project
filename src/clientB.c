@@ -48,21 +48,22 @@ int main(int argc, char *argv[]) {
             if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
                 printf("%s\n",buffer);
+                write(opts.server_socket, "ACK\n", sizeof("ACK\n"));
             }
         }
 
-        if (FD_ISSET(0, &read_fds)) {
-            if (fgets(buffer, sizeof(buffer), stdin)) {
-                if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
-                    printf("Nothing to write()\n");
-
-                if (strstr(buffer, INPUT_EXIT) != NULL) {
-                    printf("Exit from the server");
-                    close(opts.server_socket);
-                    exit(0);
-                }
-            }
-        }
+//        if (FD_ISSET(0, &read_fds)) {
+//            if (fgets(buffer, sizeof(buffer), stdin)) {
+//                if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
+//                    printf("Nothing to write()\n");
+//
+//                if (strstr(buffer, INPUT_EXIT) != NULL) {
+//                    printf("Exit from the server");
+//                    close(opts.server_socket);
+//                    exit(0);
+//                }
+//            }
+//        }
     }
     cleanup(&opts);
     return EXIT_SUCCESS;

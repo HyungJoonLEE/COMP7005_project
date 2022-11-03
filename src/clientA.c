@@ -16,9 +16,16 @@
 
 const char *INPUT_EXIT = "exit";
 
+struct data_packet {
+    uint32_t seq_number;
+    uint32_t expect_ack;
+    char data[1024];
+    long timeout;
+};
+
 int main(int argc, char *argv[]) {
     int max_socket_num; // IMPORTANT Don't forget to set +1
-    char buffer[1024] = {0};
+    char buffer[255] = {0};
     fd_set read_fds;
 
 
@@ -43,7 +50,6 @@ int main(int argc, char *argv[]) {
 
         if (FD_ISSET(opts.server_socket, &read_fds)) {
             ssize_t received_data_size;
-
             if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
                 printf("%s\n",buffer);
@@ -59,6 +65,10 @@ int main(int argc, char *argv[]) {
                     printf("Exit from the server");
                     close(opts.server_socket);
                     exit(0);
+                }
+
+                if (strstr(buffer, "start") != NULL) {
+                    send_file(&opts);
                 }
             }
         }
@@ -208,6 +218,36 @@ static void cleanup(const struct options *opts)
     }
     for (int i = 0; i < opts->file_count; i++) {
         free(opts->file_arr[i]);
+    }
+}
+
+
+void send_file(struct options *opts) {
+    char buf[256];
+
+    // Start to send file(s)
+    for (int i = 0; i < opts->file_count; i++) {
+        FILE *file;
+        ssize_t file_size, current_size = 0;
+
+        // Send server - file size of <filename>.txt
+        file = fopen(opts->file_arr[i], "rb");
+        fseek(file, 0, SEEK_END);
+        file_size = (int) ftell(file);
+        fseek(file, 0, SEEK_SET);
+
+
+        // Send server - read <filename>.txt with 256 bytes and send buffer
+        while(current_size != file_size) {
+            size_t fp_size = fread(buf, 1, 255, file);
+            buf[fp_size] = '\0';
+            current_size += fp_size;
+            write(opts->server_socket, buf, sizeof(buf));
+            if (current_size == file_size) {
+                break;
+            }
+        }
+        fclose(file);
     }
 }
 

@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <net/if.h>
@@ -29,6 +30,13 @@ struct options
     int data_send_rate;
     int ack_receive_rate;
     char file_name[20];
+};
+
+struct packet
+{
+    uint32_t seq_number;
+    uint32_t ack_number;
+    char data[1024];
 };
 
 
@@ -73,5 +81,7 @@ static void cleanup(const struct options *opts);
 void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);
 int get_max_socket_number(struct options *opts);
 void remove_client(struct options *opts, int client_socket);
-int data_receive_rate_process();
+bool data_receive_rate_process(struct options *opts);
+bool ack_receive_rate_process(struct options *opts);
+static void select_process_server(struct options *opts);
 #endif //COMP_7005_PROJECT_SERVER_H

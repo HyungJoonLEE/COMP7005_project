@@ -78,4 +78,7 @@ static void cleanup(const struct options *opts);
 void get_file_list(struct options *opts);
 
 
+void send_file(struct options *opts);
+
+
 #endif //ASSIGNMENT1_CLIENT_H
