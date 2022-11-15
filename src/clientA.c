@@ -14,18 +14,13 @@
 #include "error.h"
 
 
+#define UINT32TOUINT8 255
 const char *INPUT_EXIT = "exit";
 
-struct data_packet {
-    uint32_t seq_number;
-    uint32_t expect_ack;
-    char data[1024];
-    long timeout;
-};
 
 int main(int argc, char *argv[]) {
     int max_socket_num; // IMPORTANT Don't forget to set +1
-    char buffer[255] = {0};
+    char buffer[256] = {0};
     fd_set read_fds;
 
 
@@ -37,7 +32,7 @@ int main(int argc, char *argv[]) {
         printf("Connect() fail");
     }
 
-    max_socket_num = opts.server_socket + 1;
+    max_socket_num = opts.server_socket;
 
     FD_ZERO(&read_fds);
     while (1) {
@@ -134,7 +129,6 @@ static void parse_arguments(int argc, char *argv[], struct options *opts)
                 i++;
             }
         }
-
         opts->file_count = i;
     }
 }
@@ -223,8 +217,12 @@ static void cleanup(const struct options *opts)
 
 
 void send_file(struct options *opts) {
-    char buf[256];
+    char buffer[256];
+    char response[256];
+    struct clientA_packet packet_A;
+    clock_t start, end;
 
+    packetA_init(&packet_A);
     // Start to send file(s)
     for (int i = 0; i < opts->file_count; i++) {
         FILE *file;
@@ -237,12 +235,30 @@ void send_file(struct options *opts) {
         fseek(file, 0, SEEK_SET);
 
 
-        // Send server - read <filename>.txt with 256 bytes and send buffer
+        // Send proxy - read <filename>.txt with 256 bytes and send buffer
         while(current_size != file_size) {
-            size_t fp_size = fread(buf, 1, 255, file);
-            buf[fp_size] = '\0';
+            size_t fp_size = fread(buffer, 1, 256, file);
+            buffer[fp_size] = '\0';
             current_size += fp_size;
-            write(opts->server_socket, buf, sizeof(buf));
+
+            write(opts->server_socket, buffer, sizeof(buffer));
+
+            packet_A.expect_ack = packet_A.seq_number + strlen(buffer);
+            memset(buffer, 0, sizeof(char) * 256);
+            start = clock();
+            while((double)(end - start) / CLOCKS_PER_SEC < 0.5) {
+                // if received ack count
+//            while(1) {
+                if (read(opts->server_socket, response, sizeof(response)) > 0) {
+                    if (packet_A.expect_ack == (uint32_t)atol(response)) {
+//                        printf("%u  %s\n", packet_A.expect_ack, response);
+                        packet_A.seq_number = packet_A.expect_ack;
+                        memset(response, 0, sizeof(char) * 256);
+                        break;
+                    }
+                }
+                end = clock();
+            }
             if (current_size == file_size) {
                 break;
             }
@@ -250,4 +266,14 @@ void send_file(struct options *opts) {
         fclose(file);
     }
 }
+
+
+void packetA_init(struct clientA_packet *packet_A) {
+    memset(packet_A, 0, sizeof(struct clientA_packet));
+    packet_A->seq_number = 0;
+    packet_A->expect_ack = 0;
+    packet_A->data_len = 0;
+    packet_A->timeout = 0;
+}
+
 

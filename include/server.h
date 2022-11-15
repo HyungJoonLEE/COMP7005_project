@@ -35,7 +35,7 @@ struct options
 struct packet
 {
     uint32_t seq_number;
-    uint32_t ack_number;
+    uint32_t exp_ack_number;
     char data[1024];
 };
 

@@ -14,8 +14,14 @@
 #include <time.h>
 #include <dirent.h>
 
-#define BUF_SIZE 1024
 
+struct clientA_packet {
+    uint32_t seq_number;
+    uint32_t expect_ack;
+    int data_len;
+    char data[256];
+    long timeout;
+};
 
 
 struct options
@@ -80,5 +86,6 @@ void get_file_list(struct options *opts);
 
 void send_file(struct options *opts);
 
+void packetA_init(struct clientA_packet *packet_A);
 
 #endif //ASSIGNMENT1_CLIENT_H

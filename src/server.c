@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
     options_init_server(&opts);
     parse_arguments_server(argc, argv, &opts);
     options_process_server(&opts);
-    printf("recv data = %d\n", *(&opts.data_send_rate));
+    printf("recv rate = %d %%\n", *(&opts.data_send_rate));
+    printf("ack rate = %d %%\n", *(&opts.ack_receive_rate));
 
 
     while (1) {
@@ -66,10 +67,10 @@ int main(int argc, char *argv[]) {
         // Receive packet from client A
         if (FD_ISSET(opts.client_socket[1], &read_fds)) {
             received_data = read(opts.client_socket[1], buffer, sizeof(buffer));
-            if (received_data <= 0) {
-                remove_client(&opts, 0);
-                continue;
-            }
+//            if (received_data <= 0) {
+//                remove_client(&opts, opts.client_socket[1]);
+//                continue;
+//            }
             buffer[received_data] = '\0';
             // when user type "exit"
             if (strstr(buffer, INPUT_EXIT) != NULL) {
@@ -83,28 +84,29 @@ int main(int argc, char *argv[]) {
                 received_data_count++;
             }
             else loss_data_count++;
-            printf("%s", buffer);
+//            printf("%s", buffer);
         }
 
         // Receive ACK from client B
         if (FD_ISSET(opts.client_socket[0], &read_fds)) {
             received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
-            if (received_data <= 0) {
-                remove_client(&opts, 0);
-                continue;
-            }
+//            if (received_data <= 0) {
+//                remove_client(&opts, opts.client_socket[0]);
+//                continue;
+//            }
             buffer[received_data] = '\0';
             if (ack_receive_rate_process(&opts) > 0) {
                 write(opts.client_socket[1], buffer, sizeof(buffer));
                 received_ack_count++;
             }
             else loss_ack_count++;
-            memset(buffer, 0, 256);
+            memset(buffer, 0, sizeof(char) * 256);
         }
         printf("received_data_count = %d\n", received_data_count);
         printf("loss_data_count = %d\n", loss_data_count);
         printf("received_ack_count = %d\n", received_ack_count);
         printf("loss_ack_count = %d\n", loss_ack_count);
+        printf("Current client count = %d\n", opts.client_count);
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
@@ -208,6 +210,7 @@ void add_new_client(struct options *opts, int client_socket, struct sockaddr_in 
 
     opts->client_socket[opts->client_count] = client_socket;
     opts->client_count++;
+    printf("Current client count = %d\n", opts->client_count);
 }
 
 
@@ -240,7 +243,7 @@ bool data_receive_rate_process(struct options *opts) {
 
     struct timeval  tv;
     gettimeofday(&tv, NULL);
-    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+    double time_in_mill = (double) (tv.tv_sec) * 1000 + (tv.tv_usec);
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->data_send_rate) {
@@ -256,10 +259,9 @@ bool data_receive_rate_process(struct options *opts) {
 
 bool ack_receive_rate_process(struct options *opts) {
     int random;
-
     struct timeval  tv;
     gettimeofday(&tv, NULL);
-    double time_in_mill = (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000 ;
+    double time_in_mill = (double) ((tv.tv_sec) * 1000 + (tv.tv_usec));
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->ack_receive_rate) {

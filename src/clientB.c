@@ -19,8 +19,10 @@ const char *INPUT_EXIT = "exit";
 
 int main(int argc, char *argv[]) {
     int max_socket_num; // IMPORTANT Don't forget to set +1
-    char buffer[1024] = {0};
+    char buffer[256] = {0};
     fd_set read_fds;
+    char ack_string[15] = {0};
+    int ack = 0;
 
 
     struct options opts;
@@ -47,23 +49,13 @@ int main(int argc, char *argv[]) {
 
             if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
-                printf("%s\n",buffer);
-                write(opts.server_socket, "ACK\n", sizeof("ACK\n"));
+                printf("%s", buffer);
+                ack += sizeof(buffer);
+                sprintf(ack_string, "%d", ack);
+                write(opts.server_socket, ack_string, sizeof(ack_string));
+                memset(ack_string, 0, sizeof(char) * 15);
             }
         }
-
-//        if (FD_ISSET(0, &read_fds)) {
-//            if (fgets(buffer, sizeof(buffer), stdin)) {
-//                if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
-//                    printf("Nothing to write()\n");
-//
-//                if (strstr(buffer, INPUT_EXIT) != NULL) {
-//                    printf("Exit from the server");
-//                    close(opts.server_socket);
-//                    exit(0);
-//                }
-//            }
-//        }
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
