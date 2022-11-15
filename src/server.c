@@ -64,13 +64,10 @@ int main(int argc, char *argv[]) {
             printf("Successfully added client_fd to client_socket[%d]\n", opts.client_count - 1);
         }
 
+
         // Receive packet from client A
         if (FD_ISSET(opts.client_socket[1], &read_fds)) {
             received_data = read(opts.client_socket[1], buffer, sizeof(buffer));
-//            if (received_data <= 0) {
-//                remove_client(&opts, opts.client_socket[1]);
-//                continue;
-//            }
             buffer[received_data] = '\0';
             // when user type "exit"
             if (strstr(buffer, INPUT_EXIT) != NULL) {
@@ -79,28 +76,28 @@ int main(int argc, char *argv[]) {
             }
 
             // SEND MESSAGE TO CLIENT B
-            if(data_receive_rate_process(&opts) > 0) {
-                write(opts.client_socket[0], buffer, sizeof(buffer));
-                received_data_count++;
+            if (received_data > 0) {
+                if(data_receive_rate_process(&opts) > 0) {
+                    write(opts.client_socket[0], buffer, sizeof(buffer));
+                    received_data_count++;
+                    memset(buffer, 0, sizeof(char) * 256);
+                }
+                else loss_data_count++;
             }
-            else loss_data_count++;
-//            printf("%s", buffer);
         }
 
         // Receive ACK from client B
         if (FD_ISSET(opts.client_socket[0], &read_fds)) {
             received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
-//            if (received_data <= 0) {
-//                remove_client(&opts, opts.client_socket[0]);
-//                continue;
-//            }
             buffer[received_data] = '\0';
-            if (ack_receive_rate_process(&opts) > 0) {
-                write(opts.client_socket[1], buffer, sizeof(buffer));
-                received_ack_count++;
+            if (received_data > 0) {
+                if (ack_receive_rate_process(&opts) > 0) {
+                    write(opts.client_socket[1], buffer, sizeof(buffer));
+                    received_ack_count++;
+                    memset(buffer, 0, sizeof(char) * 256);
+                }
+                else loss_ack_count++;
             }
-            else loss_ack_count++;
-            memset(buffer, 0, sizeof(char) * 256);
         }
         printf("received_data_count = %d\n", received_data_count);
         printf("loss_data_count = %d\n", loss_data_count);
@@ -247,11 +244,11 @@ bool data_receive_rate_process(struct options *opts) {
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->data_send_rate) {
-        printf("[SENT] random(%d) <= data_send_rate(%d)\n", random, opts->data_send_rate);
+        printf("[DATA SENT] random(%d) <= data_send_rate(%d)\n", random, opts->data_send_rate);
         return true;
     }
     else {
-        printf("[FAILED] random(%d) > data_send_rate(%d)\n", random, opts->data_send_rate);
+        printf("[DATA FAILED] random(%d) > data_send_rate(%d)\n", random, opts->data_send_rate);
         return false;
     }
 }
@@ -265,11 +262,11 @@ bool ack_receive_rate_process(struct options *opts) {
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->ack_receive_rate) {
-        printf("[SENT] random(%d) <= data_send_rate(%d)\n", random, opts->ack_receive_rate);
+        printf("[ACK SENT] random(%d) <= data_send_rate(%d)\n", random, opts->ack_receive_rate);
         return true;
     }
     else {
-        printf("[FAILED] random(%d) > data_send_rate(%d)\n", random, opts->ack_receive_rate);
+        printf("[ACK FAILED] random(%d) > data_send_rate(%d)\n", random, opts->ack_receive_rate);
         return false;
     }
 }

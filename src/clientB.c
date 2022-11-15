@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     char buffer[256] = {0};
     fd_set read_fds;
     char ack_string[15] = {0};
-    int ack = 0;
+    unsigned int ack = 0;
 
 
     struct options opts;
@@ -50,8 +50,9 @@ int main(int argc, char *argv[]) {
             if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
                 printf("%s", buffer);
-                ack += sizeof(buffer);
+                ack += (unsigned int)strlen(buffer);
                 sprintf(ack_string, "%d", ack);
+                printf("\n%s\n", ack_string);
                 write(opts.server_socket, ack_string, sizeof(ack_string));
                 memset(ack_string, 0, sizeof(char) * 15);
             }

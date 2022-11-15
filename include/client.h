@@ -16,8 +16,8 @@
 
 
 struct clientA_packet {
-    uint32_t seq_number;
-    uint32_t expect_ack;
+    unsigned int seq_number;
+    unsigned int expect_ack;
     int data_len;
     char data[256];
     long timeout;
