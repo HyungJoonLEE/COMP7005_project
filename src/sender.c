@@ -9,12 +9,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "client.h"
+#include "sender.h"
 #include "conversion.h"
 #include "error.h"
 
 
-#define UINT32TOUINT8 255
 const char *INPUT_EXIT = "exit";
 
 
@@ -27,25 +26,25 @@ int main(int argc, char *argv[]) {
     struct options opts;
     options_init(&opts);
     parse_arguments(argc, argv, &opts);
-    opts.server_socket = options_process(&opts);
-    if (opts.server_socket == -1) {
+    opts.proxy_socket = options_process(&opts);
+    if (opts.proxy_socket == -1) {
         printf("Connect() fail");
     }
 
-    max_socket_num = opts.server_socket;
+    max_socket_num = opts.proxy_socket;
 
     FD_ZERO(&read_fds);
     while (1) {
         FD_SET(0, &read_fds);
-        FD_SET(opts.server_socket, &read_fds);
+        FD_SET(opts.proxy_socket, &read_fds);
         if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
             printf("select fail");
             exit(1);
         }
 
-        if (FD_ISSET(opts.server_socket, &read_fds)) {
+        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
             ssize_t received_data_size;
-            if ((received_data_size = read(opts.server_socket, buffer, sizeof(buffer))) > 0) {
+            if ((received_data_size = read(opts.proxy_socket, buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
                 printf("%s\n",buffer);
             }
@@ -55,7 +54,7 @@ int main(int argc, char *argv[]) {
             if (fgets(buffer, sizeof(buffer), stdin)) {
                 if (strstr(buffer, INPUT_EXIT) != NULL) {
                     printf("Exit from the server");
-                    close(opts.server_socket);
+                    close(opts.proxy_socket);
                     exit(0);
                 }
 
@@ -63,7 +62,7 @@ int main(int argc, char *argv[]) {
                     send_file(&opts);
                 }
                 else {
-                    if (write(opts.server_socket, buffer, sizeof(buffer)) < 0)
+                    if (write(opts.proxy_socket, buffer, sizeof(buffer)) < 0)
                         printf("Nothing to write()\n");
                 }
             }
@@ -154,9 +153,9 @@ static int options_process(struct options *opts) {
     {
         struct sockaddr_in server_addr;
 
-        opts->server_socket = socket(AF_INET, SOCK_STREAM, 0);
+        opts->proxy_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-        if(opts->server_socket == -1)
+        if(opts->proxy_socket == -1)
         {
             fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
         }
@@ -170,19 +169,19 @@ static int options_process(struct options *opts) {
             fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
         }
 
-        result = connect(opts->server_socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr_in));
+        result = connect(opts->proxy_socket, (struct sockaddr *)&server_addr, sizeof(struct sockaddr_in));
 
         if(result == -1)
         {
             fatal_errno(__FILE__, __func__ , __LINE__, errno, 2);
         }
-        server_connection_test_fd = read(opts->server_socket, message, sizeof(message));
+        server_connection_test_fd = read(opts->proxy_socket, message, sizeof(message));
         if(server_connection_test_fd == -1) {
             printf("You are not connected to server\n");
         }
-        printf("[ SERVER ]: %s \n", message);
+        printf("%s \n", message);
     }
-    return opts->server_socket;
+    return opts->proxy_socket;
 }
 
 
@@ -242,24 +241,24 @@ void send_file(struct options *opts) {
             buffer[fp_size] = '\0';
             current_size += fp_size;
 
-            write(opts->server_socket, buffer, sizeof(buffer));
+            write(opts->proxy_socket, buffer, sizeof(buffer));
 
-            packet_A.expect_ack = (unsigned int)(packet_A.seq_number + strlen(buffer));
+//            packet_A.expect_ack = (unsigned int)(packet_A.seq_number + strlen(buffer));
             memset(buffer, 0, sizeof(char) * 256);
-            start = clock();
-            while (1) {
+//            start = clock();
+//            while (1) {
                 // if received ack count
-                if (read(opts->server_socket, response, sizeof(response)) > 0) {
-                    if (packet_A.expect_ack == (unsigned long)atol(response)) {
-                        printf("%u  %s\n", packet_A.expect_ack, response);
-                        packet_A.seq_number = packet_A.expect_ack;
-                        memset(response, 0, sizeof(char) * 256);
-                        break;
-                    }
-                 }
-                end = clock();
-                if ((double) (end - start) / CLOCKS_PER_SEC < 0.6) break;
-            }
+//                if (read(opts->proxy_socket, response, sizeof(response)) > 0) {
+//                    read(opts->proxy_socket, response, sizeof(response));
+//                    if (packet_A.expect_ack == (unsigned long)atol(response)) {
+//                        printf("%u  %s\n", packet_A.expect_ack, response);
+//                        packet_A.seq_number = packet_A.expect_ack;
+//                        memset(response, 0, sizeof(char) * 256);
+//                        break;
+//                    }
+//            }
+//                end = clock();
+//                if ((double) (end - start) / CLOCKS_PER_SEC < 0.6) break;
         }
         fclose(file);
     }

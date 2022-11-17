@@ -1,5 +1,5 @@
-#ifndef ASSIGNMENT1_CLIENT_H
-#define ASSIGNMENT1_CLIENT_H
+#ifndef PROJECT_SENDER_H
+#define PROJECT_SENDER_H
 
 #include "common.h"
 #include <arpa/inet.h>
@@ -31,7 +31,7 @@ struct options
     in_port_t port_out;
     int fd_in;
     int fd_out;
-    int server_socket;
+    int proxy_socket;
     char* file_arr[200];
     int file_count;
 };
@@ -88,4 +88,4 @@ void send_file(struct options *opts);
 
 void packetA_init(struct clientA_packet *packet_A);
 
-#endif //ASSIGNMENT1_CLIENT_H
+#endif //PROJECT_SENDER_H

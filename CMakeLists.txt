@@ -10,13 +10,14 @@ project(PROJECT
 
 set(HEADER_LIST
         "${PROJECT_SOURCE_DIR}/include/common.h"
-        "${PROJECT_SOURCE_DIR}/include/server.h"
+        "${PROJECT_SOURCE_DIR}/include/proxy.h"
         "${PROJECT_SOURCE_DIR}/include/error.h"
         "${PROJECT_SOURCE_DIR}/include/conversion.h"
         "${PROJECT_SOURCE_DIR}/include/copy.h"
 #        "${PROJECT_SOURCE_DIR}/include/download.h"
 #        "${PROJECT_SOURCE_DIR}/include/send.h"
-        "${PROJECT_SOURCE_DIR}/include/client.h"
+        "${PROJECT_SOURCE_DIR}/include/sender.h"
+        "${PROJECT_SOURCE_DIR}/include/receiver.h"
 
         )
 
@@ -27,7 +28,7 @@ set(COMMON_SOURCE_LIST
         "${PROJECT_SOURCE_DIR}/src/copy.c"
         )
 
-set(SERVER_SOURCE_LIST
+set(PROXY_SOURCE_LIST
 #        "${project_SOURCE_DIR}/src/download.c"
         )
 
@@ -35,15 +36,15 @@ set(CLIENT_SOURCE_LIST
 #        "${PROJECT_SOURCE_DIR}/src/send.c"
         )
 
-set(SERVER_MAIN_SOURCE
-        "${PROJECT_SOURCE_DIR}/src/server.c"
+set(PROXY_MAIN_SOURCE
+        "${PROJECT_SOURCE_DIR}/src/proxy.c"
         )
 
-set(CLIENTA_MAIN_SOURCE
-        "${PROJECT_SOURCE_DIR}/src/clientA.c"
+set(SENDER_MAIN_SOURCE
+        "${PROJECT_SOURCE_DIR}/src/sender.c"
         )
-set(CLIENTB_MAIN_SOURCE
-        "${PROJECT_SOURCE_DIR}/src/clientB.c"
+set(RECEIVER_MAIN_SOURCE
+        "${PROJECT_SOURCE_DIR}/src/receiver.c"
         )
 
 

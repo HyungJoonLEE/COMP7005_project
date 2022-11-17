@@ -23,8 +23,11 @@
 
 struct options
 {
-    in_port_t port_in;
-    int server_socket;
+    in_port_t sender_port;
+    in_port_t reciver_port;
+    char *receiver_ip;
+    int proxy_socket;
+    int receiver_socket;
     int client_socket[2];
     int client_count;
     int data_send_rate;
@@ -47,7 +50,7 @@ struct packet
  *
  * @param opts client struct settings
  */
-static void options_init_server(struct options *opts);
+static void options_init_proxy(struct options *opts);
 
 
 /**
@@ -59,7 +62,7 @@ static void options_init_server(struct options *opts);
  * @param argv server's input
  * @param opts server option struct settings
  */
-static void parse_arguments_server(int argc, char *argv[], struct options *opts);
+static void parse_arguments_proxy(int argc, char *argv[], struct options *opts);
 
 
 /**
@@ -67,7 +70,7 @@ static void parse_arguments_server(int argc, char *argv[], struct options *opts)
  *
  * @param opts client option struct settings
  */
-static void options_process_server(struct options *opts);
+static void options_process_proxy(struct options *opts);
 
 
 /**
@@ -78,10 +81,13 @@ static void options_process_server(struct options *opts);
 static void cleanup(const struct options *opts);
 
 
+static int options_process(struct options *opts);
+
+
 void add_new_client(struct options *opts, int client_socket, struct sockaddr_in *newcliaddr);
 int get_max_socket_number(struct options *opts);
 void remove_client(struct options *opts, int client_socket);
 bool data_receive_rate_process(struct options *opts);
 bool ack_receive_rate_process(struct options *opts);
-static void select_process_server(struct options *opts);
+static void select_process_proxy(struct options *opts);
 #endif //COMP_7005_PROJECT_SERVER_H
