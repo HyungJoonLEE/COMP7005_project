@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         }
 
 
-        // Receive packet from sender
+        // RECEIVE DATA FROM SENDER
         if (FD_ISSET(opts.client_socket[0], &read_fds)) {
             received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
             buffer[received_data] = '\0';
@@ -78,20 +78,27 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // SEND MESSAGE TO CLIENT B
+            // SEND DATA TO RECEIVER and RECEIVE RESPONSE FROM RECEIVER
             if (received_data > 0) {
-                if(data_receive_rate_process(&opts) > 0) {
+                if(data_receive_rate_process(&opts) == 0) {
+                    loss_data_count++;
+                    continue;
+                }
+                else {
                     write(opts.receiver_socket, buffer, strlen(buffer));
                     received_data_count++;
                     memset(buffer, 0, sizeof(char) * 256);
                     while(1) {
-                        if (read(opts.receiver_socket, buffer, strlen(buffer)) > 0) {
-                            printf("[ receiver ] : %s\n", buffer);
+                        if (ack_receive_rate_process(&opts) == 0) {
+                            loss_ack_count++;
                             break;
                         }
+                        read(opts.receiver_socket, buffer, strlen(buffer));
+                        printf("[ receiver ] : %s\n", buffer);
+                        received_ack_count++;
+                        break;
                     }
                 }
-                else loss_data_count++;
             }
         }
 
