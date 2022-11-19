@@ -22,8 +22,15 @@ int main(int argc, char *argv[]) {
     unsigned int expected_ack = 0;
     char buffer[256] = {0};
     char response[256] = {0};
-    clock_t start, end;
+    ssize_t rx_len;
     fd_set read_fds;
+    int flag = 0;
+
+    struct timeval timeout;
+    // receive time out config
+    // Set 1 ms timeout counter
+    timeout.tv_sec  = 1;
+    timeout.tv_usec = 0;
 
 
     struct options opts;
@@ -40,18 +47,18 @@ int main(int argc, char *argv[]) {
     while (1) {
         FD_SET(0, &read_fds);
         FD_SET(opts.proxy_socket, &read_fds);
-        if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
+        if (select(max_socket_num + 1, &read_fds, NULL, NULL, &timeout) < 0) {
             printf("select fail");
             exit(1);
         }
 
-        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
-            ssize_t received_data_size;
-            if ((received_data_size = read(opts.proxy_socket, buffer, sizeof(buffer))) > 0) {
-                buffer[received_data_size] = '\0';
-                printf("%s\n",buffer);
-            }
-        }
+//        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
+//            ssize_t received_data_size;
+//            if ((received_data_size = read(opts.proxy_socket, buffer, sizeof(buffer))) > 0) {
+//                buffer[received_data_size] = '\0';
+//                printf("%s\n", buffer);
+//            }
+//        }
 
         if (FD_ISSET(0, &read_fds)) {
             if (fgets(buffer, sizeof(buffer), stdin)) {
@@ -64,24 +71,23 @@ int main(int argc, char *argv[]) {
                 if (strstr(buffer, "start") != NULL) {
                     send_file(&opts);
                 }
-                else {
-                    expected_ack += strlen(buffer);
-                    while (1) {
-                        write(opts.proxy_socket, buffer, sizeof(buffer));
-                        read(opts.proxy_socket, response, sizeof(response));
-                        if (expected_ack == (unsigned int) atoi(response)) {
-                            printf("%u  %s\n", expected_ack, response);
-                            memset(response, 0, sizeof(char) * 256);
-                            break;
-                        }
-                        else {
-                            continue;
-                        }
-                    }
-                    memset(buffer, 0, sizeof(char) * 256);
-                }
+
+                write(opts.proxy_socket, buffer, sizeof(buffer));
+                expected_ack += strlen(buffer) + 1;
             }
         }
+
+        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
+            read(opts.proxy_socket, response, sizeof(response));
+            printf("[ proxy ] : %s\n", response);
+            memset(buffer, 0, sizeof(char) * 256);
+            memset(response, 0, sizeof(char) * 256);
+        }
+        else {
+            write(opts.proxy_socket, buffer, sizeof(buffer));
+            expected_ack += strlen(buffer) + 1;
+        }
+
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
@@ -235,10 +241,7 @@ void send_file(struct options *opts) {
     char buffer[256];
     char response[256];
     unsigned int expected_ack = 0;
-    struct clientA_packet packet_A;
-    clock_t start, end;
 
-    packetA_init(&packet_A);
     // Start to send file(s)
     for (int i = 0; i < opts->file_count; i++) {
         FILE *file;
@@ -257,22 +260,17 @@ void send_file(struct options *opts) {
             buffer[fp_size] = '\0';
             current_size += fp_size;
 
-            start = clock();
             write(opts->proxy_socket, buffer, sizeof(buffer));
-            expected_ack += (unsigned int) strlen(buffer);
-            while (1) {
-                read(opts->proxy_socket, response, sizeof(response));
-                if (expected_ack == (unsigned int) atoi(response)) {
-                    printf("%u  %s\n", expected_ack, response);
-                    memset(response, 0, sizeof(char) * 256);
-                    break;
-                }
-
-                end = clock();
-                if ((double) (end - start) / CLOCKS_PER_SEC < 0.6) {
-                    write(opts->proxy_socket, buffer, sizeof(buffer));
-                }
-            }
+            read(opts->proxy_socket, response, sizeof(response));
+//            expected_ack += strlen(buffer);
+//            while (1) {
+//                read(opts->proxy_socket, response, sizeof(response));
+//                if (expected_ack == (unsigned int) atoi(response)) {
+//                    printf("%u  %s\n", expected_ack, response);
+//                    memset(response, 0, sizeof(char) * 256);
+//                    break;
+//                }
+//            }
             memset(buffer, 0, sizeof(char) * 256);
         }
         fclose(file);
@@ -280,10 +278,3 @@ void send_file(struct options *opts) {
 }
 
 
-void packetA_init(struct clientA_packet *packet_A) {
-    memset(packet_A, 0, sizeof(struct clientA_packet));
-    packet_A->seq_number = 0;
-    packet_A->expect_ack = 0;
-    packet_A->data_len = 0;
-    packet_A->timeout = 0;
-}

@@ -87,11 +87,11 @@ int main(int argc, char *argv[]) {
                 }
                 else {
                     write(opts.receiver_socket, buffer, sizeof(buffer));
-                    memset(buffer, 0, sizeof(char) * 256);
                     received_data_count++;
                     while(1) {
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
+                            break;
                         }
                         else {
                             read(opts.receiver_socket, response, sizeof(response));

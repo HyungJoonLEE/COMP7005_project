@@ -64,23 +64,15 @@ int main(int argc, char *argv[]) {
         // Send data to proxy or sender
 
         if (FD_ISSET(opts.client_socket[0], &read_fds)) {
-
             ssize_t received_data_size;
-
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
-                if (strncmp(pre_buffer, buffer, 256) == 0) {
-                    write(opts.client_socket[0], ack_string, sizeof(ack_string));
-                }
-                else {
-                    buffer[received_data_size] = '\0';
-                    printf("%s", buffer);
-                    strcpy(pre_buffer, buffer);
-                    ack += (unsigned int)strlen(buffer);
-                    sprintf(ack_string, "%d", ack);
-                    printf("%s\n", ack_string);
-                    write(opts.client_socket[0], ack_string, sizeof(ack_string));
-                }
-                memset(ack_string, 0, sizeof(char) * 16);
+                buffer[received_data_size] = '\0';
+                printf("%s", buffer);
+                ack += (unsigned int)strlen(buffer);
+                sprintf(ack_string, "%d", ack);
+                printf("\n%s\n", ack_string);
+                write(opts.client_socket[0], ack_string, sizeof(ack_string));
+                memset(ack_string, 0, sizeof(char) * 15);
             }
         }
     }
