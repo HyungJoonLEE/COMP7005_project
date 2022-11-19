@@ -85,38 +85,26 @@ int main(int argc, char *argv[]) {
                     continue;
                 }
                 else {
-                    write(opts.receiver_socket, buffer, strlen(buffer));
-                    received_data_count++;
+                    write(opts.receiver_socket, buffer, sizeof(buffer));
                     memset(buffer, 0, sizeof(char) * 256);
+                    received_data_count++;
                     while(1) {
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
                             break;
                         }
-                        read(opts.receiver_socket, buffer, strlen(buffer));
-                        printf("[ receiver ] : %s\n", buffer);
-                        received_ack_count++;
-                        break;
+                        else {
+                            read(opts.receiver_socket, buffer, sizeof(buffer));
+                            printf("[ receiver ] : %s\n", buffer);
+                            write(opts.client_socket[0], buffer, sizeof(buffer));
+                            received_ack_count++;
+                            break;
+                        }
                     }
+                    memset(buffer, 0, sizeof(char) * 256);
                 }
             }
         }
-
-        // Receive ACK from client B
-//        if (FD_ISSET(opts.receiver_socket, &read_fds)) {
-//            received_data = read(opts.receiver_socket, buffer, sizeof(buffer));
-//            buffer[received_data] = '\0';
-//            printf("[receiver] : %s\n", buffer);
-//            if (received_data > 0) {
-//                if (ack_receive_rate_process(&opts) > 0) {
-//                    write(opts.receiver_socket, buffer, sizeof(buffer));
-//                    received_ack_count++;
-//                    memset(buffer, 0, sizeof(char) * 256);
-//                }
-//                else loss_ack_count++;
-//            }
-//        }
-
         printf("received_data_count = %d\n", received_data_count);
         printf("loss_data_count = %d\n", loss_data_count);
         printf("received_ack_count = %d\n", received_ack_count);

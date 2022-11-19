@@ -68,7 +68,6 @@ int main(int argc, char *argv[]) {
 
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
-                printf("=====================hello\n");
                 printf("%s", buffer);
                 ack += (unsigned int)strlen(buffer);
                 sprintf(ack_string, "%d", ack);
