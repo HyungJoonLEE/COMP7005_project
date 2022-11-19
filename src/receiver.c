@@ -25,8 +25,9 @@ int main(int argc, char *argv[]) {
     int client_socket;
     int max_socket_num; // IMPORTANT Don't forget to set +1
     char buffer[256] = {0};
+    char pre_buffer[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
-    char ack_string[15] = {0};
+    char ack_string[16] = {0};
     unsigned int ack = 0;
     fd_set read_fds; // fd_set chasing reading status
 
@@ -67,13 +68,19 @@ int main(int argc, char *argv[]) {
             ssize_t received_data_size;
 
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
-                buffer[received_data_size] = '\0';
-                printf("%s", buffer);
-                ack += (unsigned int)strlen(buffer);
-                sprintf(ack_string, "%d", ack);
-                printf("\n%s\n", ack_string);
-                write(opts.client_socket[0], ack_string, sizeof(ack_string));
-                memset(ack_string, 0, sizeof(char) * 15);
+                if (strncmp(pre_buffer, buffer, 256) == 0) {
+                    write(opts.client_socket[0], ack_string, sizeof(ack_string));
+                }
+                else {
+                    buffer[received_data_size] = '\0';
+                    printf("%s", buffer);
+                    strcpy(pre_buffer, buffer);
+                    ack += (unsigned int)strlen(buffer);
+                    sprintf(ack_string, "%d", ack);
+                    printf("%s\n", ack_string);
+                    write(opts.client_socket[0], ack_string, sizeof(ack_string));
+                }
+                memset(ack_string, 0, sizeof(char) * 16);
             }
         }
     }

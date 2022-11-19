@@ -65,20 +65,17 @@ int main(int argc, char *argv[]) {
                     send_file(&opts);
                 }
                 else {
-                    write(opts.proxy_socket, buffer, sizeof(buffer));
                     expected_ack += strlen(buffer);
                     while (1) {
-                        if (read(opts.proxy_socket, response, sizeof(response)) > 0) {
-                            if (expected_ack == (unsigned int) atoi(response)) {
-                                printf("%u  %s\n", expected_ack, response);
-                                memset(response, 0, sizeof(char) * 256);
-                                break;
-                            }
-                        }
-                        end = clock();
-                        if ((double) (end - start) / CLOCKS_PER_SEC < 0.6) {
-                            write(opts.proxy_socket, buffer, sizeof(buffer));
+                        write(opts.proxy_socket, buffer, sizeof(buffer));
+                        read(opts.proxy_socket, response, sizeof(response));
+                        if (expected_ack == (unsigned int) atoi(response)) {
+                            printf("%u  %s\n", expected_ack, response);
+                            memset(response, 0, sizeof(char) * 256);
                             break;
+                        }
+                        else {
+                            continue;
                         }
                     }
                     memset(buffer, 0, sizeof(char) * 256);

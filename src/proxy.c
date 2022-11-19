@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     int client_socket;
     int max_socket_num; // IMPORTANT Don't forget to set +1
     char buffer[256] = {0};
+    char response[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
     ssize_t received_data;
     fd_set read_fds; // fd_set chasing reading status
@@ -91,17 +92,17 @@ int main(int argc, char *argv[]) {
                     while(1) {
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
-                            break;
                         }
                         else {
-                            read(opts.receiver_socket, buffer, sizeof(buffer));
-                            printf("[ receiver ] : %s\n", buffer);
-                            write(opts.client_socket[0], buffer, sizeof(buffer));
+                            read(opts.receiver_socket, response, sizeof(response));
+                            printf("[ receiver ] : %s\n", response);
+                            write(opts.client_socket[0], response, sizeof(response));
                             received_ack_count++;
                             break;
                         }
                     }
                     memset(buffer, 0, sizeof(char) * 256);
+                    memset(response, 0, sizeof(char) * 256);
                 }
             }
         }
