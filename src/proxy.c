@@ -93,14 +93,15 @@ int main(int argc, char *argv[]) {
                             loss_ack_count++;
                             break;
                         }
-                        else {
-                            read(opts.receiver_socket, response, sizeof(response));
-                            printf("[ receiver ] : %s\n", response);
-                            write(opts.client_socket[0], response, sizeof(response));
-                            received_ack_count++;
-                            break;
-                        }
+
+
+                        read(opts.receiver_socket, response, sizeof(response));
+                        printf("[ receiver ] : %s\n", response);
+                        write(opts.client_socket[0], response, sizeof(response));
+                        received_ack_count++;
+                        break;
                     }
+
                     memset(buffer, 0, sizeof(char) * 256);
                     memset(response, 0, sizeof(char) * 256);
                 }

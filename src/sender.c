@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     struct timeval timeout;
     // receive time out config
     // Set 1 ms timeout counter
-    timeout.tv_sec  = 1;
+    timeout.tv_sec  = 7;
     timeout.tv_usec = 0;
 
 
@@ -79,9 +79,12 @@ int main(int argc, char *argv[]) {
 
         if (FD_ISSET(opts.proxy_socket, &read_fds)) {
             read(opts.proxy_socket, response, sizeof(response));
-            printf("[ proxy ] : %s\n", response);
+//            if (expected_ack == (unsigned int)atoi(response)) {
+                printf("[ proxy ] : %s\n", response);
+//            }
             memset(buffer, 0, sizeof(char) * 256);
             memset(response, 0, sizeof(char) * 256);
+            FD_CLR(0, &read_fds);
         }
         else {
             write(opts.proxy_socket, buffer, sizeof(buffer));
