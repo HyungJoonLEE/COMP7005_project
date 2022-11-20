@@ -22,14 +22,13 @@ int main(int argc, char *argv[]) {
     unsigned int expected_ack = 0;
     char buffer[256] = {0};
     char response[256] = {0};
-    ssize_t rx_len;
     fd_set read_fds;
     int flag = 0;
 
     struct timeval timeout;
     // receive time out config
     // Set 1 ms timeout counter
-    timeout.tv_sec  = 7;
+    timeout.tv_sec  = 1;
     timeout.tv_usec = 0;
 
 
@@ -71,24 +70,27 @@ int main(int argc, char *argv[]) {
                 if (strstr(buffer, "start") != NULL) {
                     send_file(&opts);
                 }
-
-                write(opts.proxy_socket, buffer, sizeof(buffer));
-                expected_ack += strlen(buffer) + 1;
+                if (flag == 0) {
+                    write(opts.proxy_socket, buffer, sizeof(buffer));
+                }
             }
         }
 
         if (FD_ISSET(opts.proxy_socket, &read_fds)) {
             read(opts.proxy_socket, response, sizeof(response));
-//            if (expected_ack == (unsigned int)atoi(response)) {
-                printf("[ proxy ] : %s\n", response);
-//            }
+            if (expected_ack == (unsigned int)atoi(response)) {
+                printf("receiver response : %s = expected_ack : %d\n", response, expected_ack);
+            }
             memset(buffer, 0, sizeof(char) * 256);
             memset(response, 0, sizeof(char) * 256);
             FD_CLR(0, &read_fds);
+            flag = 0;
         }
         else {
             write(opts.proxy_socket, buffer, sizeof(buffer));
-            expected_ack += strlen(buffer) + 1;
+//            printf("waiting for ack...\n");
+            expected_ack += strlen(buffer);
+            flag = 1;
         }
 
     }

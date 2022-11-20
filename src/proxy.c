@@ -89,17 +89,17 @@ int main(int argc, char *argv[]) {
                     write(opts.receiver_socket, buffer, sizeof(buffer));
                     received_data_count++;
                     while(1) {
+                        read(opts.receiver_socket, response, sizeof(response));
+                        printf("[ receiver ] : %s\n", response);
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
                             break;
                         }
-
-
-                        read(opts.receiver_socket, response, sizeof(response));
-                        printf("[ receiver ] : %s\n", response);
-                        write(opts.client_socket[0], response, sizeof(response));
-                        received_ack_count++;
-                        break;
+                        else {
+                            write(opts.client_socket[0], response, sizeof(response));
+                            received_ack_count++;
+                            break;
+                        }
                     }
 
                     memset(buffer, 0, sizeof(char) * 256);
