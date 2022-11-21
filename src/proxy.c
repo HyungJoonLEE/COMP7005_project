@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     int client_address_size = sizeof(struct sockaddr_in);
     ssize_t received_data;
     fd_set read_fds; // fd_set chasing reading status
+    FILE *proxy_packet_send, *proxy_ack_send;
     int received_data_count = 0, received_ack_count = 0, loss_data_count = 0, loss_ack_count = 0;
 
 
@@ -82,24 +83,36 @@ int main(int argc, char *argv[]) {
                 if(data_receive_rate_process(&opts) == 0) {
                     loss_data_count++;
                     // TODO: Text file create and add
+                    proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
+                    fputc('0', proxy_packet_send);
+                    fclose(proxy_packet_send);
                     continue;
                 }
                 else {
                     write(opts.receiver_socket, buffer, sizeof(buffer));
                     received_data_count++;
                     // TODO: Text file create and add
+                    proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
+                    fputc('1', proxy_packet_send);
+                    fclose(proxy_packet_send);
                     while(1) {
                         read(opts.receiver_socket, response, sizeof(response));
                         printf("[ receiver ] : %s\n", response);
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
                             // TODO: Text file create and add
+                            proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
+                            fputc('0', proxy_ack_send);
+                            fclose(proxy_ack_send);
                             break;
                         }
                         else {
                             write(opts.client_socket[0], response, sizeof(response));
                             received_ack_count++;
                             // TODO: Text file create and add
+                            proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
+                            fputc('1', proxy_ack_send);
+                            fclose(proxy_ack_send);
                             break;
                         }
                     }

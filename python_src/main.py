@@ -4,7 +4,7 @@ import numpy as np
 # Need script or instruction that will install matplotlib in Linux
 
 
-def draw_graph(value_list, size):
+def draw_graph(value_list):
     x = np.arange(0, len(value_list), 1)
     y_value = []
     temp = 0
@@ -24,20 +24,16 @@ def draw_graph(value_list, size):
 def process_file(file_pointer):
     value_string = file_pointer.read()
     print(list(value_string))
-    draw_graph(list(value_string), len(value_string))
+    draw_graph(list(value_string))
 
 
 if __name__ == '__main__':
-    sender_packet_send = open("../cmake-build-debug/sender_packet_send.txt")
-    sender_ack_receive = open("../cmake-build-debug/sender_ack_receive.txt")
-    proxy_packet_send = open("../cmake-build-debug/proxy_packet_send.txt")
-    proxy_ack_send = open("../cmake-build-debug/proxy_ack_send.txt")
-    receiver_packet_receive = open(
-        "../cmake-build-debug/receiver_packet_receive.txt")
+    proxy_packet_send = open("proxy_packet_send.txt")
+    proxy_ack_send = open("proxy_ack_send.txt")
 
-    process_file(sender_packet_send)
-    process_file(sender_ack_receive)
-    process_file(sender_ack_receive)
+    process_file(proxy_packet_send)
+    process_file(proxy_ack_send)
+    # process_file(sender_ack_receive)
 
 
 

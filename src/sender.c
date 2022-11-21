@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
     struct timeval timeout;
     // receive time out config
     // Set 1 ms timeout counter
-    timeout.tv_sec  = 8;
-    timeout.tv_usec = 0;
+    timeout.tv_sec  = 0;
+    timeout.tv_usec = 400;
 
 
     struct options opts;
@@ -65,28 +65,19 @@ int main(int argc, char *argv[]) {
                 if (strstr(buffer, "start") != NULL) {
                     send_file(&opts, &read_fds);
                 }
-//                if (flag == 0) {
-//                    write(opts.proxy_socket, buffer, sizeof(buffer));
-//                    expected_ack += strlen(buffer);
-//                }
             }
         }
 
         if (FD_ISSET(opts.proxy_socket, &read_fds)) {
             read(opts.proxy_socket, response, sizeof(response));
-            if (expected_ack == (unsigned int)atoi(response)) {
-                printf("receiver response : %s = expected_ack : %d\n", response, expected_ack);
-            }
             memset(buffer, 0, sizeof(char) * 256);
             memset(response, 0, sizeof(char) * 256);
             FD_CLR(0, &read_fds);
-            flag = 0;
         }
         else {
             write(opts.proxy_socket, buffer, sizeof(buffer));
 //            printf("waiting for ack...\n");
             expected_ack += strlen(buffer);
-            flag = 1;
         }
 
     }
@@ -246,8 +237,8 @@ void send_file(struct options *opts, fd_set* read_fds) {
     struct timeval timeout;
     // receive time out config
     // Set 1 ms timeout counter
-    timeout.tv_sec  = 1;
-    timeout.tv_usec = 0;
+    timeout.tv_sec  = 0;
+    timeout.tv_usec = 200;
 
 
     // Start to send file(s)
@@ -278,9 +269,6 @@ void send_file(struct options *opts, fd_set* read_fds) {
 
                 if (FD_ISSET(opts->proxy_socket, read_fds)) {
                     read(opts->proxy_socket, response, sizeof(response));
-                    if (expected_ack == (unsigned int)atoi(response)) {
-                        printf("receiver response : %s = expected_ack : %d\n", response, expected_ack);
-                    }
                     memset(buffer, 0, sizeof(char) * 256);
                     memset(response, 0, sizeof(char) * 256);
                     FD_CLR(opts->proxy_socket, read_fds);
