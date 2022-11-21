@@ -45,9 +45,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         FD_ZERO(&read_fds);
         FD_SET(opts.proxy_socket, &read_fds);
-//        for (int i = 0; i < opts.client_count; i++) {
-            FD_SET(opts.client_socket[0], &read_fds);
-//        }
+        FD_SET(opts.client_socket[0], &read_fds);
         max_socket_num = get_max_socket_number(&opts) + 1;
         printf("wait for client\n");
         if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {

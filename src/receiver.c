@@ -12,6 +12,7 @@
 #include "receiver.h"
 #include "conversion.h"
 #include "error.h"
+#include "common.h"
 
 #define NAME_LEN 20
 

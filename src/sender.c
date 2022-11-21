@@ -12,6 +12,7 @@
 #include "sender.h"
 #include "conversion.h"
 #include "error.h"
+#include "common.h"
 
 
 const char *INPUT_EXIT = "exit";
@@ -53,15 +54,6 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
 
-
-
-//        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
-//            ssize_t received_data_size;
-//            if ((received_data_size = read(opts.proxy_socket, buffer, sizeof(buffer))) > 0) {
-//                buffer[received_data_size] = '\0';
-//                printf("%s\n", buffer);
-//            }
-//        }
 
         if (FD_ISSET(0, &read_fds)) {
             if (fgets(buffer, sizeof(buffer), stdin)) {
@@ -277,18 +269,6 @@ void send_file(struct options *opts, fd_set* read_fds) {
             buffer[fp_size] = '\0';
             current_size += fp_size;
 
-//            write(opts->proxy_socket, buffer, sizeof(buffer));
-//            read(opts->proxy_socket, response, sizeof(response));
-//            expected_ack += strlen(buffer);
-//            while (1) {
-//                read(opts->proxy_socket, response, sizeof(response));
-//                if (expected_ack == (unsigned int) atoi(response)) {
-//                    printf("%u  %s\n", expected_ack, response);
-//                    memset(response, 0, sizeof(char) * 256);
-//                    break;
-//                }
-//            }
-//            printf("%x\n", read_fds);
 
             while(1) {
                 FD_SET(opts->proxy_socket, read_fds);
