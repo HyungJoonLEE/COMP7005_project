@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+# Need script or instruction that will install matplotlib in Linux
+
 
 def draw_graph(value_list, size):
     x = np.arange(0, len(value_list), 1)

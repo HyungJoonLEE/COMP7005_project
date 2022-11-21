@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     struct timeval timeout;
     // receive time out config
     // Set 1 ms timeout counter
-    timeout.tv_sec  = 1;
+    timeout.tv_sec  = 8;
     timeout.tv_usec = 0;
 
 
@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
 
 
     FD_ZERO(&read_fds);
-    printf("%x\n", &read_fds);
     while (1) {
         FD_SET(0, &read_fds);
         FD_SET(opts.proxy_socket, &read_fds);
@@ -66,10 +65,10 @@ int main(int argc, char *argv[]) {
                 if (strstr(buffer, "start") != NULL) {
                     send_file(&opts, &read_fds);
                 }
-                if (flag == 0) {
-                    write(opts.proxy_socket, buffer, sizeof(buffer));
-                    expected_ack += strlen(buffer);
-                }
+//                if (flag == 0) {
+//                    write(opts.proxy_socket, buffer, sizeof(buffer));
+//                    expected_ack += strlen(buffer);
+//                }
             }
         }
 
@@ -276,9 +275,6 @@ void send_file(struct options *opts, fd_set* read_fds) {
                     printf("select fail");
                     exit(1);
                 }
-                if (flag == 0) {
-                    write(opts->proxy_socket, buffer, sizeof(buffer));
-                }
 
                 if (FD_ISSET(opts->proxy_socket, read_fds)) {
                     read(opts->proxy_socket, response, sizeof(response));
@@ -287,14 +283,13 @@ void send_file(struct options *opts, fd_set* read_fds) {
                     }
                     memset(buffer, 0, sizeof(char) * 256);
                     memset(response, 0, sizeof(char) * 256);
-                    FD_CLR(0, read_fds);
+                    FD_CLR(opts->proxy_socket, read_fds);
                     flag = 0;
                     break;
                 }
                 else {
                     write(opts->proxy_socket, buffer, sizeof(buffer));
                     expected_ack += strlen(buffer);
-                    flag = 1;
                 }
             }
         }

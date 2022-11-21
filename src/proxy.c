@@ -81,21 +81,25 @@ int main(int argc, char *argv[]) {
             if (received_data > 0) {
                 if(data_receive_rate_process(&opts) == 0) {
                     loss_data_count++;
+                    // TODO: Text file create and add
                     continue;
                 }
                 else {
                     write(opts.receiver_socket, buffer, sizeof(buffer));
                     received_data_count++;
+                    // TODO: Text file create and add
                     while(1) {
                         read(opts.receiver_socket, response, sizeof(response));
                         printf("[ receiver ] : %s\n", response);
                         if (ack_receive_rate_process(&opts) == 0) {
                             loss_ack_count++;
+                            // TODO: Text file create and add
                             break;
                         }
                         else {
                             write(opts.client_socket[0], response, sizeof(response));
                             received_ack_count++;
+                            // TODO: Text file create and add
                             break;
                         }
                     }
