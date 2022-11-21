@@ -76,7 +76,7 @@ static void cleanup(const struct options *opts);
 void get_file_list(struct options *opts);
 
 
-void send_file(struct options *opts);
+void send_file(struct options *opts, fd_set* read_fds);
 
 
 #endif //PROJECT_SENDER_H

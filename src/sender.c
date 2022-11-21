@@ -42,7 +42,9 @@ int main(int argc, char *argv[]) {
 
     max_socket_num = opts.proxy_socket;
 
+
     FD_ZERO(&read_fds);
+    printf("%x\n", &read_fds);
     while (1) {
         FD_SET(0, &read_fds);
         FD_SET(opts.proxy_socket, &read_fds);
@@ -50,6 +52,8 @@ int main(int argc, char *argv[]) {
             printf("select fail");
             exit(1);
         }
+
+
 
 //        if (FD_ISSET(opts.proxy_socket, &read_fds)) {
 //            ssize_t received_data_size;
@@ -68,10 +72,11 @@ int main(int argc, char *argv[]) {
                 }
 
                 if (strstr(buffer, "start") != NULL) {
-                    send_file(&opts);
+                    send_file(&opts, &read_fds);
                 }
                 if (flag == 0) {
                     write(opts.proxy_socket, buffer, sizeof(buffer));
+                    expected_ack += strlen(buffer);
                 }
             }
         }
@@ -242,10 +247,17 @@ static void cleanup(const struct options *opts)
 }
 
 
-void send_file(struct options *opts) {
+void send_file(struct options *opts, fd_set* read_fds) {
     char buffer[256];
     char response[256];
     unsigned int expected_ack = 0;
+    int flag = 0;
+    struct timeval timeout;
+    // receive time out config
+    // Set 1 ms timeout counter
+    timeout.tv_sec  = 1;
+    timeout.tv_usec = 0;
+
 
     // Start to send file(s)
     for (int i = 0; i < opts->file_count; i++) {
@@ -265,8 +277,8 @@ void send_file(struct options *opts) {
             buffer[fp_size] = '\0';
             current_size += fp_size;
 
-            write(opts->proxy_socket, buffer, sizeof(buffer));
-            read(opts->proxy_socket, response, sizeof(response));
+//            write(opts->proxy_socket, buffer, sizeof(buffer));
+//            read(opts->proxy_socket, response, sizeof(response));
 //            expected_ack += strlen(buffer);
 //            while (1) {
 //                read(opts->proxy_socket, response, sizeof(response));
@@ -276,7 +288,35 @@ void send_file(struct options *opts) {
 //                    break;
 //                }
 //            }
-            memset(buffer, 0, sizeof(char) * 256);
+//            printf("%x\n", read_fds);
+
+            while(1) {
+                FD_SET(opts->proxy_socket, read_fds);
+                if (select(opts->proxy_socket + 1, read_fds, NULL, NULL, &timeout) < 0) {
+                    printf("select fail");
+                    exit(1);
+                }
+                if (flag == 0) {
+                    write(opts->proxy_socket, buffer, sizeof(buffer));
+                }
+
+                if (FD_ISSET(opts->proxy_socket, read_fds)) {
+                    read(opts->proxy_socket, response, sizeof(response));
+                    if (expected_ack == (unsigned int)atoi(response)) {
+                        printf("receiver response : %s = expected_ack : %d\n", response, expected_ack);
+                    }
+                    memset(buffer, 0, sizeof(char) * 256);
+                    memset(response, 0, sizeof(char) * 256);
+                    FD_CLR(0, read_fds);
+                    flag = 0;
+                    break;
+                }
+                else {
+                    write(opts->proxy_socket, buffer, sizeof(buffer));
+                    expected_ack += strlen(buffer);
+                    flag = 1;
+                }
+            }
         }
         fclose(file);
     }
