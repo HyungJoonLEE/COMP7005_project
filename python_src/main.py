@@ -4,39 +4,52 @@ import numpy as np
 # Need script or instruction that will install matplotlib in Linux
 
 
-def draw_graph(value_list):
-    x = np.arange(0, len(value_list), 1)
+def draw_graph_data(proxy_value_list):
+    x = np.arange(0, len(proxy_value_list), 1)
     y_value = []
     temp = 0
 
-    for val in value_list:
+    for val in proxy_value_list:
         if val == '1':
             temp += 1
             y_value.append(temp)
         else:
             y_value.append(temp)
 
-    plt.plot(x, y_value, 'b', label='first')
-    # plt.legend(loc='upper right')
+    plt.xlabel('total data packets sent')
+    plt.ylabel('actual data packets arrived')
+    plt.plot(x, y_value, 'b')
+
     plt.show()
 
 
-def process_file(file_pointer):
-    value_string = file_pointer.read()
-    print(list(value_string))
-    draw_graph(list(value_string))
+def draw_graph_ack(ack_value_list):
+    x = np.arange(0, len(ack_value_list), 1)
+    y_value = []
+    temp = 0
 
+    for val in ack_value_list:
+        if val == '1':
+            temp += 1
+            y_value.append(temp)
+        else:
+            y_value.append(temp)
+
+    plt.xlabel('total ack packets sent')
+    plt.ylabel('actual ack packets arrived')
+    plt.plot(x, y_value, 'r')
+    plt.show()
+
+def process_file(file_pointer1, file_pointer2):
+    value_string = file_pointer1.read()
+    value_string2 = file_pointer2.read()
+    draw_graph_ack(list(value_string2))
+    draw_graph_data(list(value_string))
 
 if __name__ == '__main__':
     proxy_packet_send = open("proxy_packet_send.txt")
     proxy_ack_send = open("proxy_ack_send.txt")
 
-    process_file(proxy_packet_send)
-    process_file(proxy_ack_send)
+    process_file(proxy_packet_send, proxy_ack_send)
     # process_file(sender_ack_receive)
-
-
-
-    # plt.plot(x, y, 'b', label='first')
-    # plt.plot(x, y2, 'r', label='second')
 

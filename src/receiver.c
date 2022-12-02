@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     char buffer[256] = {0};
     char pre_buffer[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
-    char ack_string[16] = {0};
+    char ack_string[30] = {0};
     unsigned int ack = 0;
     fd_set read_fds; // fd_set chasing reading status
 
@@ -70,13 +70,16 @@ int main(int argc, char *argv[]) {
 
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
-                printf("%s", buffer);
+                printf("%s\n", buffer);
                 ack += (unsigned int)strlen(buffer);
-                sprintf(ack_string, "%d", ack);
+                sprintf(ack_string, "ack = %d", ack);
                 printf("%s\n", ack_string);
                 write(opts.client_socket[0], ack_string, sizeof(ack_string));
                 memset(buffer, 0, sizeof(char) * 15);
                 memset(ack_string, 0, sizeof(char) * 15);
+            }
+            else {
+                break;
             }
         }
     }

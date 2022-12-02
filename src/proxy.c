@@ -73,6 +73,10 @@ int main(int argc, char *argv[]) {
             buffer[received_data] = '\0';
             // when user type "exit"
             printf("[ sender ]: %s\n", buffer);
+            if (received_data < 0) {
+                remove_client(&opts, opts.client_socket[0]);
+                break;
+            }
             if (strstr(buffer, INPUT_EXIT) != NULL) {
                 remove_client(&opts, 0);
                 continue;
