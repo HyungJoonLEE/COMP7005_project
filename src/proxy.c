@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         FD_SET(opts.proxy_socket, &read_fds);
         FD_SET(opts.client_socket[0], &read_fds);
         max_socket_num = get_max_socket_number(&opts) + 1;
-        printf("wait for client\n");
+//        printf("wait for client\n");
         if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
             printf("select() error");
             exit(1);
@@ -72,7 +72,8 @@ int main(int argc, char *argv[]) {
             received_data = read(opts.client_socket[0], buffer, sizeof(buffer));
             buffer[received_data] = '\0';
             // when user type "exit"
-            printf("[ sender ]: %s\n", buffer);
+            if (strlen(buffer) != 0)
+                printf("[ sender ]: %s\n", buffer);
             if (received_data < 0) {
                 remove_client(&opts, opts.client_socket[0]);
                 break;
@@ -84,53 +85,53 @@ int main(int argc, char *argv[]) {
 
             // SEND DATA TO RECEIVER and RECEIVE RESPONSE FROM RECEIVER
             if (received_data > 0) {
-                if(data_receive_rate_process(&opts) == 0) {
-                    loss_data_count++;
-                    // TODO: Text file create and add
-                    proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
-                    fputc('0', proxy_packet_send);
-                    fclose(proxy_packet_send);
-                    continue;
-                }
-                else {
-                    write(opts.receiver_socket, buffer, sizeof(buffer));
-                    received_data_count++;
-                    // TODO: Text file create and add
-                    proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
-                    fputc('1', proxy_packet_send);
-                    fclose(proxy_packet_send);
-                    while(1) {
-                        read(opts.receiver_socket, response, sizeof(response));
-                        printf("[ receiver ] : %s\n", response);
-                        if (ack_receive_rate_process(&opts) == 0) {
-                            loss_ack_count++;
-                            // TODO: Text file create and add
-                            proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
-                            fputc('0', proxy_ack_send);
-                            fclose(proxy_ack_send);
-                            break;
-                        }
-                        else {
-                            write(opts.client_socket[0], response, sizeof(response));
-                            received_ack_count++;
-                            // TODO: Text file create and add
-                            proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
-                            fputc('1', proxy_ack_send);
-                            fclose(proxy_ack_send);
-                            break;
+                if (strlen(buffer) != 0) {
+                    if (data_receive_rate_process(&opts) == 0) {
+                        loss_data_count++;
+                        printf("loss_data_count = %d\n", loss_data_count);
+                        // TODO: Text file create and add
+                        proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
+                        fputc('0', proxy_packet_send);
+                        fclose(proxy_packet_send);
+                        continue;
+                    } else {
+                        write(opts.receiver_socket, buffer, sizeof(buffer));
+                        received_data_count++;
+                        printf("received_data_count = %d\n", received_data_count);
+                        // TODO: Text file create and add
+                        proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
+                        fputc('1', proxy_packet_send);
+                        fclose(proxy_packet_send);
+                        while (1) {
+                            read(opts.receiver_socket, response, sizeof(response));
+                            printf("[ receiver ] : %s\n", response);
+                            if (ack_receive_rate_process(&opts) == 0) {
+                                if (strlen(response) != 0) {
+                                    loss_ack_count++;
+                                    printf("loss_ack_count = %d\n", loss_ack_count);
+                                    // TODO: Text file create and add
+                                    proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
+                                    fputc('0', proxy_ack_send);
+                                    fclose(proxy_ack_send);
+                                    break;
+                                }
+                            } else {
+                                write(opts.client_socket[0], response, sizeof(response));
+                                received_ack_count++;
+                                printf("received_ack_count = %d\n", received_ack_count);
+                                memset(buffer, 0, sizeof(char) * 256);
+                                // TODO: Text file create and add
+                                proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
+                                fputc('1', proxy_ack_send);
+                                fclose(proxy_ack_send);
+                                break;
+                            }
                         }
                     }
-
-                    memset(buffer, 0, sizeof(char) * 256);
-                    memset(response, 0, sizeof(char) * 256);
                 }
+                memset(response, 0, sizeof(char) * 256);
             }
         }
-        printf("received_data_count = %d\n", received_data_count);
-        printf("loss_data_count = %d\n", loss_data_count);
-        printf("received_ack_count = %d\n", received_ack_count);
-        printf("loss_ack_count = %d\n", loss_ack_count);
-        printf("Current client count = %d\n", opts.client_count);
     }
     cleanup(&opts);
     return EXIT_SUCCESS;
@@ -325,11 +326,11 @@ bool data_receive_rate_process(struct options *opts) {
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->data_send_rate) {
-        printf("[DATA SENT] random(%d) <= data_send_rate(%d)\n", random, opts->data_send_rate);
+//        printf("[DATA SENT] random(%d) <= data_send_rate(%d)\n", random, opts->data_send_rate);
         return true;
     }
     else {
-        printf("[DATA FAILED] random(%d) > data_send_rate(%d)\n", random, opts->data_send_rate);
+//        printf("[DATA FAILED] random(%d) > data_send_rate(%d)\n", random, opts->data_send_rate);
         return false;
     }
 }
@@ -343,11 +344,11 @@ bool ack_receive_rate_process(struct options *opts) {
     srand(time_in_mill);
     random = rand() % 100 + 1;
     if (random <= opts->ack_receive_rate) {
-        printf("[ACK SENT] random(%d) <= data_send_rate(%d)\n", random, opts->ack_receive_rate);
+//        printf("[ACK SENT] random(%d) <= data_send_rate(%d)\n", random, opts->ack_receive_rate);
         return true;
     }
     else {
-        printf("[ACK FAILED] random(%d) > data_send_rate(%d)\n", random, opts->ack_receive_rate);
+//        printf("[ACK FAILED] random(%d) > data_send_rate(%d)\n", random, opts->ack_receive_rate);
         return false;
     }
 }

@@ -14,7 +14,6 @@
 #include "error.h"
 #include "common.h"
 
-#define NAME_LEN 20
 
 const char *INPUT_EXIT = "exit"; // client input cancel connection
 const char *CONNECTION_SUCCESS = "Successfully connected to the receiver\n"; // when client connected server send this
@@ -28,7 +27,7 @@ int main(int argc, char *argv[]) {
     char buffer[256] = {0};
     char pre_buffer[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
-    char ack_string[30] = {0};
+    char ack_string[256] = {0};
     unsigned int ack = 0;
     fd_set read_fds; // fd_set chasing reading status
 
@@ -44,7 +43,7 @@ int main(int argc, char *argv[]) {
             FD_SET(opts.client_socket[i], &read_fds);
         }
         max_socket_num = get_max_socket_number(&opts) + 1;
-        printf("wait for client\n");
+//        printf("wait for client\n");
         if (select(max_socket_num, &read_fds, NULL, NULL, NULL) < 0) {
             printf("select() error");
             exit(1);
@@ -70,13 +69,13 @@ int main(int argc, char *argv[]) {
 
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
-                printf("%s\n", buffer);
+                printf("%s", buffer);
                 ack += (unsigned int)strlen(buffer);
-                sprintf(ack_string, "ack = %d", ack);
-                printf("%s\n", ack_string);
+                sprintf(ack_string, "%d", ack);
+                printf("ack = [ %s ]\n\n", ack_string);
                 write(opts.client_socket[0], ack_string, sizeof(ack_string));
-                memset(buffer, 0, sizeof(char) * 15);
-                memset(ack_string, 0, sizeof(char) * 15);
+                memset(buffer, 0, sizeof(char) * 256);
+                memset(ack_string, 0, sizeof(char) * 256);
             }
             else {
                 break;

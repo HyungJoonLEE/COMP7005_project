@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     // receive time out config
     // Set 1 ms timeout counter
     timeout.tv_sec  = 0;
-    timeout.tv_usec = 400;
+    timeout.tv_usec = 300;
 
 
     struct options opts;
@@ -57,12 +57,14 @@ int main(int argc, char *argv[]) {
         if (FD_ISSET(0, &read_fds)) {
             if (fgets(buffer, sizeof(buffer), stdin)) {
                 if (strstr(buffer, INPUT_EXIT) != NULL) {
+                    write(opts.proxy_socket, buffer, sizeof(buffer));
                     printf("Exit from the server");
                     close(opts.proxy_socket);
-                    exit(0);
+                    break;
                 }
 
                 if (strstr(buffer, "start") != NULL) {
+                    memset(buffer, 0, sizeof(char) * 256);
                     send_file(&opts, &read_fds);
                 }
             }
