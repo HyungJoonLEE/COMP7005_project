@@ -14,9 +14,10 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
+#include <sys/socket.h>
+#include <sys/select.h>
 
 #define BACKLOG 5
-#define DEFAULT_PORT 4000
 #define TRUE 1
 
 
@@ -28,15 +29,6 @@ struct options
     int client_count;
     char file_name[20];
 };
-
-
-struct packet
-{
-    uint32_t seq_number;
-    uint32_t exp_ack_number;
-    char data[1024];
-};
-
 
 
 /**

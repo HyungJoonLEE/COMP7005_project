@@ -14,9 +14,12 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
+#include <strings.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <sys/file.h>
 
 #define BACKLOG 5
-#define DEFAULT_PORT 4000
 #define DEFAULT_DATA_SEND_RATE 100
 #define DEFAULT_ACK_RECEIVE_RATE 100
 
@@ -24,7 +27,7 @@
 struct options
 {
     in_port_t sender_port;
-    in_port_t reciver_port;
+    in_port_t receiver_port;
     char *receiver_ip;
     int proxy_socket;
     int receiver_socket;
@@ -33,13 +36,6 @@ struct options
     int data_send_rate;
     int ack_receive_rate;
     char file_name[20];
-};
-
-struct packet
-{
-    uint32_t seq_number;
-    uint32_t exp_ack_number;
-    char data[1024];
 };
 
 

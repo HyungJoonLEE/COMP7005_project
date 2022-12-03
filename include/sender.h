@@ -14,6 +14,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <dirent.h>
+#include <sys/socket.h>
+#include <sys/select.h>
 
 
 struct options

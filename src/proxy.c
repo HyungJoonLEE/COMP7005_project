@@ -1,14 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <sys/file.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include "conversion.h"
 #include "proxy.h"
 #include "error.h"
@@ -140,7 +129,7 @@ int main(int argc, char *argv[]) {
 static void options_init_proxy(struct options *opts) {
     memset(opts, 0, sizeof(struct options));
     opts->sender_port = DEFAULT_PORT_PROXY;
-    opts->reciver_port = DEFAULT_PORT_RECEIVER;
+    opts->receiver_port = DEFAULT_PORT_RECEIVER;
     opts->receiver_ip = NULL;
     opts->data_send_rate = DEFAULT_DATA_SEND_RATE;
     opts->ack_receive_rate = DEFAULT_ACK_RECEIVE_RATE;
@@ -167,7 +156,7 @@ static void parse_arguments_proxy(int argc, char *argv[], struct options *opts)
             }
             case 'p':
             {
-                opts->reciver_port = parse_port(optarg, 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+                opts->receiver_port = parse_port(optarg, 10); // NOLINT(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
                 break;
             }
             case 'd':
@@ -244,7 +233,7 @@ static int options_process(struct options *opts) {
     int result;
     char message[50] = {0};
 
-    if(opts->reciver_port)
+    if(opts->receiver_port)
     {
         struct sockaddr_in receiver_addr;
 
@@ -256,7 +245,7 @@ static int options_process(struct options *opts) {
         }
 
         receiver_addr.sin_family = AF_INET;
-        receiver_addr.sin_port = htons(opts->reciver_port);
+        receiver_addr.sin_port = htons(opts->receiver_port);
         receiver_addr.sin_addr.s_addr = inet_addr(opts->receiver_ip);
 
         if(receiver_addr.sin_addr.s_addr ==  (in_addr_t)-1)
