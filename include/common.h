@@ -22,8 +22,8 @@
 #include <stdio.h>
 
 
-#define DEFAULT_PORT_SENDER 4000
-#define DEFAULT_PORT_RECEIVER 4500
+#define DEFAULT_PORT_PROXY 53000
+#define DEFAULT_PORT_RECEIVER 54000
 #define TRUE 1
 #define FALSE 0
 

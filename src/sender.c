@@ -90,7 +90,7 @@ static void options_init(struct options *opts)
     memset(opts, 0, sizeof(struct options));
     opts->fd_in    = STDIN_FILENO;
     opts->fd_out   = STDOUT_FILENO;
-    opts->port_out = DEFAULT_PORT;
+    opts->port_out = DEFAULT_PORT_PROXY;
 }
 
 

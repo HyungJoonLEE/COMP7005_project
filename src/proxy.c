@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
 static void options_init_proxy(struct options *opts) {
     memset(opts, 0, sizeof(struct options));
-    opts->sender_port = DEFAULT_PORT_SENDER;
+    opts->sender_port = DEFAULT_PORT_PROXY;
     opts->reciver_port = DEFAULT_PORT_RECEIVER;
     opts->receiver_ip = NULL;
     opts->data_send_rate = DEFAULT_DATA_SEND_RATE;
