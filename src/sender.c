@@ -58,9 +58,6 @@ int main(int argc, char *argv[]) {
                     if (strstr(buffer, "start") != NULL) {
                         memset(buffer, 0, sizeof(char) * 256);
                         send_file(&opts, &read_fds);
-                    } else {
-                        write(opts.proxy_socket, buffer, sizeof(buffer));
-                        FD_CLR(0, &read_fds);
                     }
                 }
             }
