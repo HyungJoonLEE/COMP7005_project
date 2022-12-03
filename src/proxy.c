@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
                     if (data_receive_rate_process(&opts) == 0) {
                         loss_data_count++;
                         printf("loss_data_count = %d\n", loss_data_count);
-                        // TODO: Text file create and add
+                        // TODO: drop data packet
                         proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
                         fputc('0', proxy_packet_send);
                         fclose(proxy_packet_send);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                         write(opts.receiver_socket, buffer, sizeof(buffer));
                         received_data_count++;
                         printf("received_data_count = %d\n", received_data_count);
-                        // TODO: Text file create and add
+                        // TODO: send data packet to receiver
                         proxy_packet_send = fopen("../../python_src/proxy_packet_send.txt", "a");
                         fputc('1', proxy_packet_send);
                         fclose(proxy_packet_send);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
                                 if (strlen(response) != 0) {
                                     loss_ack_count++;
                                     printf("loss_ack_count = %d\n", loss_ack_count);
-                                    // TODO: Text file create and add
+                                    // TODO: drop ack packet
                                     proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
                                     fputc('0', proxy_ack_send);
                                     fclose(proxy_ack_send);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
                                 received_ack_count++;
                                 printf("received_ack_count = %d\n", received_ack_count);
                                 memset(buffer, 0, sizeof(char) * 256);
-                                // TODO: Text file create and add
+                                // TODO: send ack packet to sender
                                 proxy_ack_send = fopen("../../python_src/proxy_ack_send.txt", "a");
                                 fputc('1', proxy_ack_send);
                                 fclose(proxy_ack_send);
@@ -139,8 +139,8 @@ int main(int argc, char *argv[]) {
 
 static void options_init_proxy(struct options *opts) {
     memset(opts, 0, sizeof(struct options));
-    opts->sender_port = DEFAULT_PORT;
-    opts->reciver_port = DEFAULT_PORT;
+    opts->sender_port = DEFAULT_PORT_SENDER;
+    opts->reciver_port = DEFAULT_PORT_RECEIVER;
     opts->receiver_ip = NULL;
     opts->data_send_rate = DEFAULT_DATA_SEND_RATE;
     opts->ack_receive_rate = DEFAULT_ACK_RECEIVE_RATE;

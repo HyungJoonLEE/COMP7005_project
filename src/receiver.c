@@ -25,7 +25,6 @@ int main(int argc, char *argv[]) {
     int client_socket;
     int max_socket_num; // IMPORTANT Don't forget to set +1
     char buffer[256] = {0};
-    char pre_buffer[256] = {0};
     int client_address_size = sizeof(struct sockaddr_in);
     char ack_string[256] = {0};
     unsigned int ack = 0;
@@ -70,6 +69,10 @@ int main(int argc, char *argv[]) {
             if ((received_data_size = read(opts.client_socket[0], buffer, sizeof(buffer))) > 0) {
                 buffer[received_data_size] = '\0';
                 printf("%s", buffer);
+                if (strstr(buffer, INPUT_EXIT) != NULL) {
+                    remove_client(&opts, 0);
+                    break;
+                }
                 ack += (unsigned int)strlen(buffer);
                 sprintf(ack_string, "%d", ack);
                 printf("ack = [ %s ]\n\n", ack_string);
