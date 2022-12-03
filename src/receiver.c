@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
 static void options_init_receiver(struct options *opts) {
     memset(opts, 0, sizeof(struct options));
-    opts->port_in = DEFAULT_PORT;
+    opts->port_in = DEFAULT_PORT_RECEIVER;
 }
 
 
