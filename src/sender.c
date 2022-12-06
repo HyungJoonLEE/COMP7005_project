@@ -32,8 +32,9 @@ int main(int argc, char *argv[]) {
         struct timeval timeout;
         // receive time out config
         // Set 1 ms timeout counter
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 1;
+        // TODO: Sender can change the timeout to resend the packet
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
         if (strlen(buffer) == 0) {
             if (FD_ISSET(0, &read_fds)) {
                 if (fgets(buffer, sizeof(buffer), stdin)) {
@@ -245,6 +246,7 @@ void send_file(struct options *opts, fd_set* read_fds) {
                 struct timeval timeout;
                 // receive time out config
                 // Set 1 ms timeout counter
+                // TODO: Sender can change the timeout to resend the packet
                 timeout.tv_sec = 1;
                 timeout.tv_usec = 0;
                 FD_SET(opts->proxy_socket, read_fds);
