@@ -1,5 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import os
+
 
 # Need script or instruction that will install matplotlib in Linux
 
@@ -19,8 +21,8 @@ def draw_graph_data(proxy_value_list):
     plt.xlabel('total data packets sent')
     plt.ylabel('actual data packets arrived')
     plt.plot(x, y_value, 'b')
-
     plt.show()
+    os.remove("./../../python_src/proxy_packet_send.txt")
 
 
 def draw_graph_ack(ack_value_list):
@@ -39,6 +41,9 @@ def draw_graph_ack(ack_value_list):
     plt.ylabel('actual ack packets arrived')
     plt.plot(x, y_value, 'r')
     plt.show()
+    os.remove("./../../python_src/proxy_ack_send.txt")
+
+
 
 def process_file(file_pointer1, file_pointer2):
     value_string = file_pointer1.read()
@@ -46,10 +51,10 @@ def process_file(file_pointer1, file_pointer2):
     draw_graph_ack(list(value_string2))
     draw_graph_data(list(value_string))
 
+
 if __name__ == '__main__':
-    proxy_packet_send = open("proxy_packet_send.txt")
-    proxy_ack_send = open("proxy_ack_send.txt")
+    proxy_packet_send = open("./../../python_src/proxy_packet_send.txt")
+    proxy_ack_send = open("./../../python_src/proxy_ack_send.txt")
 
     process_file(proxy_packet_send, proxy_ack_send)
     # process_file(sender_ack_receive)
-

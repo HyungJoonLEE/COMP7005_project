@@ -2,12 +2,16 @@
 #include "proxy.h"
 #include "error.h"
 #include "common.h"
+#include <unistd.h>
+#include <sys/types.h>
+
 
 
 const char *INPUT_EXIT = "exit"; // client input cancel connection
 const char *CONNECTION_SUCCESS = "Successfully connected to the proxy\n"; // when client connected server send this
 
 int main(int argc, char *argv[]) {
+    pid_t pid;
     struct options opts;
     struct sockaddr_in client_address;
     int client_socket;
@@ -68,8 +72,16 @@ int main(int argc, char *argv[]) {
                 break;
             }
             if (strstr(buffer, INPUT_EXIT) != NULL) {
-                remove_client(&opts, 0);
-                continue;
+
+                pid = fork();
+                if (pid < 0) {
+                    fprintf(stderr, "fork failed");
+                    return 1;
+                }
+                else if (pid != 0) {
+                    execlp("python3", "python3", "./../../python_src/main.py", "test", (char*) NULL);                    remove_client(&opts, 0);
+                    continue;
+                }
             }
 
             // SEND DATA TO RECEIVER and RECEIVE RESPONSE FROM RECEIVER
