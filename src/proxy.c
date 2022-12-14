@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 else if (pid != 0) {
-                    execlp("python3", "python3", "./../../python_src/main.py", "test", (char*) NULL);                    remove_client(&opts, 0);
+                    execlp("python3", "python3", "./../../python_src/main.py", (char*) NULL);                    remove_client(&opts, 0);
                     continue;
                 }
             }
